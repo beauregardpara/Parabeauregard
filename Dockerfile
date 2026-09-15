@@ -8,17 +8,24 @@
 FROM node:22-alpine AS base
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+# Prisma query engine needs OpenSSL on Alpine
+RUN apk add --no-cache openssl
 
 # Dépendances seules (cache Docker optimal)
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci
+# postinstall (scripts/prisma.mjs) runs in the builder stage, where scripts/ exists
+RUN npm ci --ignore-scripts
 
 # Build (génère Prisma client + bundle Next output:standalone)
 FROM base AS builder
+# Build-time only database URL (SQLite) so the Prisma wrapper can generate the client
+ENV DATABASE_URL=file:./data/build.db
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npx prisma generate && npm run build
+# SESSION_SECRET is only needed while Next collects page data; the placeholder is
+# scoped to this RUN and never persisted into the runtime image.
+RUN npx prisma generate && SESSION_SECRET=docker-build-only-placeholder npm run build
 
 # Runtime minimal : fichiers standalone + public
 FROM base AS runner

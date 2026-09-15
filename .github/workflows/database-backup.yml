@@ -62,6 +62,26 @@ jobs:
           sudo apt-get install --yes -qq postgresql-client-17
           echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
 
+      - name: Describe API key shape (no secret values)
+        shell: bash
+        run: |
+          node -e '
+            const k = process.env.SUPABASE_SECRET_KEY || "";
+            console.log(JSON.stringify({
+              length: k.length,
+              startsWithSbSecret: k.startsWith("sb_secret_"),
+              startsWithSbPublishable: k.startsWith("sb_publishable_"),
+              startsWithJwt: k.startsWith("eyJ"),
+              leadingWhitespace: /^\s/.test(k),
+              trailingWhitespace: /\s$/.test(k),
+              innerWhitespace: /\S\s+\S/.test(k),
+              hasQuotes: /["\x27]/.test(k),
+              looksLikeUrl: /^https?:/.test(k),
+              looksLikeEnvAssignment: /^[A-Z_]+=/.test(k),
+              containsSbSecretLater: k.indexOf("sb_secret_") > 0,
+            }));
+          '
+
       - name: Validate required secret presence and shape (no values printed)
         shell: bash
         run: |

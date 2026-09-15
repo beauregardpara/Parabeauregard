@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────
-# Image de production THIQTI.MA
-# Build : docker build -t thiqti-ma .
-# Run   : docker run -p 3000:3000 -e DATABASE_URL="…" -e SESSION_SECRET="…" thiqti-ma
+# Image de production Para Beauregard (PostgreSQL)
+# Build : docker build -t para-beauregard .
+# Run   : docker run -p 3000:3000 -e DATABASE_URL="postgresql://…" -e SESSION_SECRET="…" para-beauregard
 # Health: GET /api/health (200 = ok, 503 = DB KO, version incluse)
 # ─────────────────────────────────────────────────────────────
 
@@ -17,15 +17,16 @@ COPY package.json package-lock.json ./
 # postinstall (scripts/prisma.mjs) runs in the builder stage, where scripts/ exists
 RUN npm ci --ignore-scripts
 
-# Build (génère Prisma client + bundle Next output:standalone)
+# Build (génère le client Prisma PostgreSQL + bundle Next output:standalone)
 FROM base AS builder
-# Build-time only database URL (SQLite) so the Prisma wrapper can generate the client
-ENV DATABASE_URL=file:./data/build.db
+# Placeholder PostgreSQL URL: only selects the Prisma provider at build time.
+# No database is contacted during the build and nothing is persisted in the runtime image.
+ENV DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # SESSION_SECRET is only needed while Next collects page data; the placeholder is
 # scoped to this RUN and never persisted into the runtime image.
-RUN npx prisma generate && SESSION_SECRET=docker-build-only-placeholder npm run build
+RUN SESSION_SECRET=docker-build-only-placeholder npm run build
 
 # Runtime minimal : fichiers standalone + public
 FROM base AS runner
@@ -40,11 +41,6 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# DB SQLite locale (smoke test CI) : dossier pré-créé et inscriptible
-# par l'utilisateur non-root nextjs (sinon Permission denied au run).
-RUN mkdir -p /app/data \
-  && chown nextjs:nodejs /app/data
 
 USER nextjs
 EXPOSE 3000

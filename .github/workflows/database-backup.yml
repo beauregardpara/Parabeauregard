@@ -62,12 +62,15 @@ jobs:
           sudo apt-get install --yes -qq postgresql-client-17
           echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
 
-      - name: Validate required secret presence
+      - name: Validate required secret presence and shape (no values printed)
         shell: bash
         run: |
           test -n "$SUPABASE_DB_URL" || { echo "SUPABASE_DB_URL secret is missing"; exit 1; }
           test -n "$SUPABASE_URL" || { echo "SUPABASE_URL secret is missing"; exit 1; }
           test -n "$SUPABASE_SECRET_KEY" || { echo "SUPABASE_SECRET_KEY secret is missing"; exit 1; }
+          case "$SUPABASE_URL" in https://*.supabase.co|https://*.supabase.co/) echo "SUPABASE_URL shape: ok";; *) echo "SUPABASE_URL must be https://<project-ref>.supabase.co"; exit 1;; esac
+          case "$SUPABASE_SECRET_KEY" in sb_secret_*) echo "SUPABASE_SECRET_KEY shape: sb_secret_ key";; eyJ*) echo "SUPABASE_SECRET_KEY shape: legacy JWT key";; *) echo "SUPABASE_SECRET_KEY does not look like a Supabase secret key"; exit 1;; esac
+          case "$SUPABASE_DB_URL" in sb_secret_*|sb_publishable_*|eyJ*) echo "SUPABASE_DB_URL contains an API key instead of a PostgreSQL URL"; exit 1;; esac
           pg_dump --version
 
       - name: Describe database connection (no secret values)

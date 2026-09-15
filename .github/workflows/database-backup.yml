@@ -14,9 +14,24 @@ concurrency:
 
 jobs:
   backup:
-    name: PostgreSQL + Supabase Storage backup
+    name: PostgreSQL + Supabase Storage backup (with isolated restore test)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    services:
+      restore-db:
+        # Isolated, throw-away PostgreSQL used ONLY for the restore test.
+        image: postgres:17
+        env:
+          POSTGRES_USER: restore
+          POSTGRES_PASSWORD: restore
+          POSTGRES_DB: restore
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U restore"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       DIRECT_URL: ${{ secrets.SUPABASE_DB_URL }}
@@ -25,42 +40,121 @@ jobs:
       SUPABASE_BACKUP_BUCKET: database-backups
       SUPABASE_STORAGE_BACKUP_BUCKET: product-images
       BACKUP_RETENTION_DAYS: "14"
+      RESTORE_DB_URL: postgresql://restore:restore@localhost:5433/restore
+      OUT: artifacts/backup-output
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install PostgreSQL client
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install PostgreSQL 17 client tools
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes postgresql-client
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install --yes -qq postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
 
       - name: Validate required secret presence
         shell: bash
         run: |
-          test -n "$SUPABASE_DB_URL"
-          test -n "$SUPABASE_URL"
-          test -n "$SUPABASE_SECRET_KEY"
+          test -n "$SUPABASE_DB_URL" || { echo "SUPABASE_DB_URL secret is missing"; exit 1; }
+          test -n "$SUPABASE_URL" || { echo "SUPABASE_URL secret is missing"; exit 1; }
+          test -n "$SUPABASE_SECRET_KEY" || { echo "SUPABASE_SECRET_KEY secret is missing"; exit 1; }
+          pg_dump --version
+
+      - name: Record live row counts (read-only)
+        id: live
+        shell: bash
+        run: |
+          set -euo pipefail
+          q() { psql "$SUPABASE_DB_URL" -X -At -v ON_ERROR_STOP=1 -c "$1" 2>/dev/null; }
+          products=$(q 'SELECT count(*) FROM public."Product"')
+          categories=$(q 'SELECT count(*) FROM public."Category"')
+          images=$(q 'SELECT count(*) FROM public."ProductImage"')
+          brands=$(q "SELECT count(DISTINCT brand) FROM public.\"Product\" WHERE brand IS NOT NULL AND brand <> ''")
+          echo "products=$products" >> "$GITHUB_OUTPUT"
+          echo "categories=$categories" >> "$GITHUB_OUTPUT"
+          echo "images=$images" >> "$GITHUB_OUTPUT"
+          echo "brands=$brands" >> "$GITHUB_OUTPUT"
+          echo "Live counts: products=$products brands=$brands categories=$categories productImages=$images"
 
       - name: Create PostgreSQL dump
         shell: bash
         run: |
-          mkdir -p artifacts/backup-output
+          set -euo pipefail
+          mkdir -p "$OUT"
           pg_dump "$SUPABASE_DB_URL" \
             --format=custom \
             --no-owner \
             --no-privileges \
-            --file="artifacts/backup-output/para-beauregard-production.dump"
-          test -s artifacts/backup-output/para-beauregard-production.dump
+            --file="$OUT/para-beauregard-production.dump"
+          test -s "$OUT/para-beauregard-production.dump"
+          echo "Dump size: $(stat -c %s "$OUT/para-beauregard-production.dump") bytes"
 
-      - name: Upload database dump to private Supabase Storage
-        run: node scripts/backup-postgres-remote.mjs
-
-      - name: Export Supabase product images
-        run: node scripts/backup-supabase-storage.mjs
-
-      - name: Archive product images
+      - name: Restore dump into isolated PostgreSQL (never production)
         shell: bash
-        run: tar -czf artifacts/backup-output/product-images.tar.gz -C artifacts/storage-backup .
+        run: |
+          set -uo pipefail
+          case "$RESTORE_DB_URL" in *@localhost:5433/*) ;; *) echo "Restore target is not the isolated service DB"; exit 1;; esac
+          pg_restore --dbname="$RESTORE_DB_URL" --schema=public --no-owner --no-privileges \
+            "$OUT/para-beauregard-production.dump" 2> restore-errors.log
+          status=$?
+          echo "pg_restore exit code: $status (non-zero can be caused by Supabase-only objects; verified below)"
+          grep -c '^pg_restore: error' restore-errors.log || true
+          rm -f restore-errors.log
+
+      - name: Install dependencies (Prisma client for restore verification)
+        run: npm ci --no-audit --no-fund
+        env:
+          DATABASE_URL: ${{ env.RESTORE_DB_URL }}
+          DIRECT_URL: ""
+
+      - name: Verify restored data with Prisma
+        run: node scripts/verify-restored-backup.mjs
+        env:
+          DATABASE_URL: ${{ env.RESTORE_DB_URL }}
+          DIRECT_URL: ""
+          EXPECTED_PRODUCTS: ${{ steps.live.outputs.products }}
+          EXPECTED_BRANDS: ${{ steps.live.outputs.brands }}
+          EXPECTED_CATEGORIES: ${{ steps.live.outputs.categories }}
+          EXPECTED_PRODUCT_IMAGES: ${{ steps.live.outputs.images }}
+
+      - name: Export Supabase product images (read-only)
+        id: storage
+        run: node scripts/backup-supabase-storage.mjs
+        env:
+          STORAGE_BACKUP_OUTPUT: artifacts/storage-backup
+          STORAGE_BACKUP_MANIFEST: artifacts/backup-output/product-images-manifest.json
+
+      - name: Archive product images and test extraction
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -czf "$OUT/product-images.tar.gz" -C artifacts/storage-backup .
+          archived=$(tar -tzf "$OUT/product-images.tar.gz" | grep -vc '/$' || true)
+          expected="${{ steps.storage.outputs.objects }}"
+          tmp=$(mktemp -d)
+          tar -xzf "$OUT/product-images.tar.gz" -C "$tmp"
+          extracted=$(find "$tmp" -type f | wc -l)
+          rm -rf "$tmp"
+          echo "Storage objects: listed=$expected archived=$archived extracted=$extracted"
+          test "$archived" = "$expected"
+          test "$extracted" = "$expected"
+          (cd "$OUT" && sha256sum para-beauregard-production.dump product-images.tar.gz > SHA256SUMS)
+
+      - name: Secondary copy to private Supabase bucket
+        # Primary backup is the private GitHub artifact below; this copy needs
+        # the private "database-backups" bucket to exist.
+        continue-on-error: true
+        run: node scripts/backup-postgres-remote.mjs
 
       - name: Upload private GitHub Actions artifact
         uses: actions/upload-artifact@v4

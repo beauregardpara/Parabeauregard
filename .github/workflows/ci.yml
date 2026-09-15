@@ -133,7 +133,9 @@ jobs:
             echo "$path -> $code"
             test "$code" = "200"
           done
-          curl -s "http://127.0.0.1:3000/produits/guinot-longue-vie-creme-jeunesse-revitalisante-visage-homme-50-ml" | grep -q "Guinot"
+          # Write to a file first: piping into `grep -q` makes curl fail with SIGPIPE (exit 23) under pipefail.
+          curl -s -o product.html "http://127.0.0.1:3000/produits/guinot-longue-vie-creme-jeunesse-revitalisante-visage-homme-50-ml"
+          grep -q "Guinot" product.html
           echo "SMOKE OK"
       - name: Container logs on failure
         if: failure()

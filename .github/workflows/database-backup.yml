@@ -1,0 +1,71 @@
+name: Production database and storage backup
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: PostgreSQL + Supabase Storage backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      DIRECT_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      SUPABASE_BACKUP_BUCKET: database-backups
+      SUPABASE_STORAGE_BACKUP_BUCKET: product-images
+      BACKUP_RETENTION_DAYS: "14"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+
+      - name: Validate required secret presence
+        shell: bash
+        run: |
+          test -n "$SUPABASE_DB_URL"
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_SECRET_KEY"
+
+      - name: Create PostgreSQL dump
+        shell: bash
+        run: |
+          mkdir -p artifacts/backup-output
+          pg_dump "$SUPABASE_DB_URL" \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --file="artifacts/backup-output/para-beauregard-production.dump"
+          test -s artifacts/backup-output/para-beauregard-production.dump
+
+      - name: Upload database dump to private Supabase Storage
+        run: node scripts/backup-postgres-remote.mjs
+
+      - name: Export Supabase product images
+        run: node scripts/backup-supabase-storage.mjs
+
+      - name: Archive product images
+        shell: bash
+        run: tar -czf artifacts/backup-output/product-images.tar.gz -C artifacts/storage-backup .
+
+      - name: Upload private GitHub Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: para-beauregard-production-backup-${{ github.run_id }}
+          path: artifacts/backup-output
+          if-no-files-found: error
+          retention-days: 14

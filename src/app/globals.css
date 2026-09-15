@@ -1,0 +1,644 @@
+@import "tailwindcss";
+
+@layer components {
+  .admin-input {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-para-400 focus:ring-2 focus:ring-para-100;
+  }
+
+  .admin-label {
+    @apply mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400;
+  }
+}
+
+@theme {
+  /* Stacks locales : aucun téléchargement distant ne bloque le build. */
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-display: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+
+  /* Primary palette: forest green, sage and warm ivory. */
+  --color-para-50: #f4f8f1;
+  --color-para-100: #e9efe6;
+  --color-para-200: #dde7dc;
+  --color-para-300: #c8d6c8;
+  --color-para-400: #a6bca9;
+  --color-para-500: #4f806c;
+  --color-para-600: #1b5546;
+  --color-para-700: #174a3d;
+  --color-para-800: #123f36;
+  --color-para-900: #0f342e;
+  --color-para-950: #0b2823;
+
+  --color-mint: #fdf6f1;
+  /* Burgundy is an accent, reserved for emotional/promotional moments. */
+  --color-coral-50: #fff6f3;
+  --color-coral-100: #fae7df;
+  --color-coral-200: #f3d9cd;
+  --color-coral-300: #e9c1b4;
+  --color-coral-400: #d98d85;
+  --color-coral-500: #b63a51;
+  --color-coral-600: #a52e45;
+  --color-coral-700: #8e2e3d;
+  --color-coral-800: #7a2431;
+  --color-coral-900: #651e2a;
+  --color-coral-950: #4d171f;
+
+  --shadow-soft: 0 18px 45px rgba(18, 63, 54, 0.12);
+  --shadow-lift: 0 24px 60px -16px rgba(18, 63, 54, 0.22);
+  --shadow-glow: 0 0 60px -10px rgba(198, 164, 106, 0.28);
+  --shadow-card: 0 2px 6px -2px rgba(18, 63, 54, 0.06), 0 12px 28px -12px rgba(18, 63, 54, 0.12);
+  --radius-card: 1.5rem;
+}
+
+/* ───────────────────────── Base ───────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #fff9f6;
+  color: #202b28;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select, textarea { font: inherit; }
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: #dde7dc;
+  color: #123f36;
+}
+
+/* ───────────────────────── Utilitaires mockup ───────────────────────── */
+
+@utility container-page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  .container-page { padding-inline: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  .container-page { padding-inline: 2rem; }
+}
+
+@utility surface {
+  border-radius: 1.5rem;
+  border: 1px solid rgba(18, 63, 54, 0.12);
+  background: #fffdfb;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-para-700);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--color-para-800); }
+
+@utility btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(18, 63, 54, 0.18);
+  background: #fffdfb;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #651e2a;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-secondary:hover { border-color: var(--color-para-200); color: var(--color-para-800); }
+
+@utility chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background: var(--color-para-50);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-para-800);
+}
+
+/* Accessibilité : focus visible homogène partout */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-para-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Lien d'évitement : visible uniquement au focus clavier */
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: 0.75rem;
+  background: var(--color-para-800);
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 8px 24px -8px rgba(18, 63, 54, 0.5);
+  transition: transform 0.2s ease;
+}
+.skip-link:focus { transform: none; }
+
+/* Mobile : pas de zoom au double-tap sur les éléments interactifs */
+a, button { touch-action: manipulation; }
+html {
+  -webkit-tap-highlight-color: rgba(18, 63, 54, 0.15);
+  scroll-behavior: smooth;
+  /* Les tiroirs fermés (panier, menu, filtres) sont positionnés hors écran à
+     droite : sans cette règle ils élargissent le document et créent un
+     défilement latéral sur toutes les pages. `clip` plutôt que `hidden` afin de
+     ne pas créer de conteneur de défilement, ce qui casserait `position: sticky`. */
+  overflow-x: clip;
+}
+/* Dégage le contenu ciblé du header fixe lors d'un ancrage */
+main, [id] { scroll-margin-top: 5rem; }
+
+/* Scrollbar discrète */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--color-para-300), var(--color-para-600));
+  border-radius: 999px;
+  border: 2px solid #fff9f6;
+}
+
+/* ───────────────────────── Scène 3D ───────────────────────── */
+
+.scene {
+  perspective: 1400px;
+  perspective-origin: 50% 30%;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.tilt {
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+/* Cartes produits : élévation + inclinaison au survol */
+.card-3d {
+  transform-style: preserve-3d;
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card-3d:hover {
+  transform: translateY(-8px) rotateX(3deg) rotateY(-2deg);
+  box-shadow: var(--shadow-lift);
+}
+.card-3d:hover .card-3d-img {
+  transform: scale(1.08) translateZ(30px);
+}
+.card-3d-img {
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Fin dégradé sous l'image produit pour un rendu premium */
+.card-media {
+  position: relative;
+}
+.card-media::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 38%;
+  background: linear-gradient(to top, rgba(122, 36, 49, 0.08), transparent);
+  pointer-events: none;
+}
+
+/* Boutons avec profondeur */
+.btn-3d {
+  position: relative;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  will-change: transform;
+}
+.btn-3d:hover { transform: translateY(-2px); }
+.btn-3d:active { transform: translateY(1px) scale(0.985); }
+
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 60%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+  pointer-events: none;
+}
+.btn-shine:hover::after { transform: translateX(120%); }
+
+/* Reflet sur cartes */
+.glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--glare-x, 50%) var(--glare-y, 20%),
+    rgba(255, 255, 255, 0.55),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}
+.group:hover .glare,
+.tilt-active .glare { opacity: 1; }
+
+/* ───────────────────────── Animations ───────────────────────── */
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0px) rotate(var(--float-rot, 0deg)); }
+  50% { transform: translateY(-16px) rotate(calc(var(--float-rot, 0deg) + 1.5deg)); }
+}
+.animate-floaty { animation: floaty 6s ease-in-out infinite; }
+.animate-floaty-slow { animation: floaty 9s ease-in-out infinite; }
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: spin-slow 22s linear infinite; }
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(122, 36, 49, 0.35); }
+  70% { box-shadow: 0 0 0 16px rgba(122, 36, 49, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(122, 36, 49, 0); }
+}
+.pulse-ring { animation: pulse-ring 2.4s cubic-bezier(0.66, 0, 0, 1) infinite; }
+
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-x 32s linear infinite;
+}
+.marquee-track:hover { animation-play-state: paused; }
+
+/* Apparition au scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px) scale(0.98);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.revealed {
+  opacity: 1;
+  transform: none;
+}
+.reveal-d1 { transition-delay: 0.08s; }
+.reveal-d2 { transition-delay: 0.16s; }
+.reveal-d3 { transition-delay: 0.24s; }
+.reveal-d4 { transition-delay: 0.32s; }
+
+/* Fond dégradé animé (hero) */
+.mesh-bg {
+  background:
+    radial-gradient(42rem 42rem at 85% -10%, rgba(233, 193, 180, 0.55), transparent 60%),
+    radial-gradient(36rem 36rem at -10% 25%, rgba(247, 228, 217, 0.72), transparent 55%),
+    radial-gradient(30rem 30rem at 50% 120%, rgba(198, 164, 106, 0.16), transparent 60%);
+}
+.blob {
+  filter: blur(70px);
+  opacity: 0.55;
+  border-radius: 999px;
+  animation: blob-drift 14s ease-in-out infinite alternate;
+}
+@keyframes blob-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(40px, -30px) scale(1.15); }
+}
+
+/* Header verre */
+.glass {
+  background: rgba(255, 253, 251, 0.88);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+}
+
+/* Badge promo */
+.badge-promo {
+  background: linear-gradient(135deg, var(--color-coral-500), var(--color-coral-600));
+  box-shadow: 0 6px 18px -6px rgba(122, 36, 49, 0.42);
+}
+
+/* Badge Nouveau */
+.badge-new {
+  background: linear-gradient(135deg, var(--color-para-600), var(--color-para-800));
+  box-shadow: 0 6px 18px -6px rgba(122, 36, 49, 0.42);
+}
+
+/* Ligne décorative dégradée */
+.hr-gradient {
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--color-coral-300), transparent);
+}
+
+/* Zoom galerie produit */
+.zoom-frame { overflow: hidden; }
+.zoom-frame img {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.zoom-frame:hover img { transform: scale(1.6); }
+
+/* Skeleton de chargement */
+.skeleton {
+  background: linear-gradient(90deg, #f3e3dd 25%, #fff9f6 50%, #f3e3dd 75%);
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.4s ease infinite;
+}
+@keyframes skeleton-wave {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* Accessibilité : réduire les animations */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
+
+/* Sans JavaScript, la classe `.revealed` n'est jamais posée et le contenu
+   resterait invisible : la règle de repli est injectée via <noscript> dans
+   src/app/layout.tsx. */
+
+/* ───────────────────── Premium 3D+ ───────────────────── */
+
+/* Texte dégradé animé */
+.text-shimmer {
+  background: linear-gradient(110deg, #651e2a 15%, #a94a58 35%, #c6a46a 50%, #a94a58 65%, #651e2a 85%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-slide 6s ease-in-out infinite;
+}
+@keyframes shimmer-slide {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Aurore animée en fond de hero */
+.aurora {
+  position: absolute;
+  inset: -30%;
+  pointer-events: none;
+  background:
+    radial-gradient(38rem 22rem at 20% 30%, rgba(233, 193, 180, 0.4), transparent 65%),
+    radial-gradient(30rem 24rem at 75% 20%, rgba(247, 228, 217, 0.52), transparent 60%),
+    radial-gradient(26rem 26rem at 60% 80%, rgba(198, 164, 106, 0.16), transparent 60%),
+    radial-gradient(24rem 18rem at 10% 85%, rgba(122, 36, 49, 0.12), transparent 60%);
+  filter: blur(46px);
+  animation: aurora-drift 18s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift {
+  0%   { transform: translate(-2%, -1%) scale(1) rotate(0deg); }
+  50%  { transform: translate(2%, 2%) scale(1.06) rotate(2deg); }
+  100% { transform: translate(-1%, 1%) scale(1.02) rotate(-1deg); }
+}
+
+/* Barre de progression de lecture */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 80;
+  height: 3px;
+  width: 100%;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--color-coral-300), var(--color-para-700), var(--color-coral-500));
+  will-change: transform;
+}
+
+/* Bordure lumineuse animée (tuiles catégories) */
+.glow-border {
+  position: relative;
+}
+.glow-border::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--gb-angle, 0deg), transparent 0%, #d9afa0 12%, transparent 26%, #c6a46a 55%, transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  animation: gb-rotate 3.4s linear infinite;
+}
+.group:hover .glow-border::before,
+.glow-border:hover::before {
+  opacity: 1;
+}
+@property --gb-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes gb-rotate {
+  to { --gb-angle: 360deg; }
+}
+
+/* Balayage lumineux diagonal sur les cartes */
+.shine-card {
+  position: relative;
+  overflow: hidden;
+}
+.shine-card::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  bottom: -60%;
+  left: -30%;
+  width: 34%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: translateX(-220%) rotate(12deg);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}
+.shine-card:hover::after {
+  transform: translateX(560%) rotate(12deg);
+}
+
+/* Badges verre flottants du hero */
+.float-badge {
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 14px 34px -14px rgba(122, 36, 49, 0.24);
+}
+
+/* Anneau textuel rotatif */
+.ring-text {
+  animation: spin-slow 26s linear infinite;
+}
+
+/* Élévation profonde pour sections sombres */
+.shadow-deep {
+  box-shadow:
+    0 6px 16px -8px rgba(122, 36, 49, 0.2),
+    0 30px 70px -20px rgba(122, 36, 49, 0.3);
+}
+
+/* ───────────────────── Mobile & bottom nav ───────────────────── */
+
+/* Navigation basse mobile : hauteur fixe + zone safe-area iPhone */
+:root {
+  --bn-height: 4.25rem;
+  --bn-padding: env(safe-area-inset-bottom, 0px);
+  --bottom-nav-height: var(--bn-height);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --product-sticky-gap: 0.5rem;
+  --product-sticky-height: 4.75rem;
+  --floating-chat-size: 3.25rem;
+}
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  height: calc(var(--bn-height) + var(--bn-padding));
+  padding-bottom: var(--bn-padding);
+  background: rgba(251, 253, 255, 0.92);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: stretch;
+}
+.bottom-nav button, .bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: #64748b;
+  border-radius: 0;
+  outline-offset: -2px;
+}
+.bottom-nav a.active {
+  color: var(--color-para-700);
+}
+.bottom-nav .bn-count {
+  position: absolute;
+  top: 6px;
+  right: calc(50% - 22px);
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--color-coral-500);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+/* Crédit au contenu sous la barre (évite tout chevauchement) */
+.has-bottom-nav { padding-bottom: calc(var(--bn-height) + var(--bn-padding) + 0.5rem); }
+
+@media (min-width: 1024px) {
+  .bottom-nav { display: none; }
+  .has-bottom-nav { padding-bottom: 0; }
+}
+
+/* Bouton flottant chat : décollé au-dessus de la barre "+ panier" mobile */
+.chat-fab { width: var(--floating-chat-size); height: var(--floating-chat-size); bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 5.25rem) !important; }
+@media (min-width: 1024px) {
+  .chat-fab { bottom: 1.5rem !important; }
+}
+@media (max-width: 639px) {
+  /* Sur HOME, le FAB reste disponible sans recouvrir les statistiques. */
+  .chat-fab {
+    width: 3rem;
+    height: 3rem;
+    right: 0.5rem !important;
+    bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 0.5rem) !important;
+  }
+  /* Product pages keep the assistant above the optional sticky purchase bar. */
+  .chat-fab-product {
+    bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + var(--product-sticky-height) + var(--product-sticky-gap) + 0.75rem) !important;
+  }
+  /* Admin has no storefront bottom navigation; keep its assistant near the viewport edge. */
+  .chat-fab-admin {
+    top: 4.5rem !important;
+    bottom: auto !important;
+  }
+}
+
+/* Dans l'espace admin, le bouton reste accessible sans recouvrir les
+   tableaux, formulaires ou actions fixes en bas de viewport. */
+@media (min-width: 640px) {
+  .chat-fab-admin {
+    top: 1rem !important;
+    bottom: auto !important;
+  }
+}
+
+/* Respecter la préférence de mouvement réduit (WCAG 2.3.3 / WCAG 2.2 2.3.1) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

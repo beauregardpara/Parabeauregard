@@ -1,0 +1,53 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+/prisma/schema.*.generated.prisma
+/artifacts/migration-export/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env files
+.env*
+!.env.example
+!.env.production.example
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# database
+/prisma/dev.db
+/prisma/dev.db-journal
+
+# local tooling, references and generated QA artifacts
+/.agents/
+/.claude/
+/references/
+/artifacts/
+/test-results/
+/para-beauregard-mockup/
+/logs/
+*.log
+*.dump
+*.db
+*.db-journal
+/*.zip
+
+.vercel
+.env*
+
+.vercel
+.env*

@@ -1,0 +1,36 @@
+# ── Build / dépendances ──
+node_modules
+.next
+out
+build
+.turbo
+
+# ── Données & secrets ──
+.dev
+*.db*
+.env
+.env.*
+!.env.example
+public/uploads
+
+# ── Tests & docs ──
+tests
+e2e
+test-results
+playwright-report
+coverage
+docs
+
+# ── VCS / IDE / OS ──
+.git
+.gitignore
+.github
+*.md
+.prettierrc
+Dockerfile
+README.md
+
+# ── Divers ──
+*.log
+tsconfig.tsbuildinfo
+next-env.d.ts

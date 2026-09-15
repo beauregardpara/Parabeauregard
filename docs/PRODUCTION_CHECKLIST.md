@@ -1,0 +1,24 @@
+# Checklist de mise en production
+
+- [ ] domaine
+- [ ] DNS
+- [ ] HTTPS
+- [ ] PostgreSQL production
+- [ ] DATABASE_URL
+- [ ] SESSION_SECRET généré
+- [ ] SMTP/provider email
+- [ ] email expéditeur vérifié
+- [ ] provider IA optionnel
+- [ ] paiement carte certifié si souhaité
+- [ ] paiement à la livraison testé
+- [ ] sauvegarde DB automatisée
+- [ ] restauration testée
+- [ ] monitoring `/api/health`
+- [ ] analytics si voulu
+- [ ] robots
+- [ ] sitemap
+- [ ] tests production
+- [ ] admin sécurisé et comptes par défaut remplacés
+- [ ] première commande test
+- [ ] stockage persistant des uploads
+- [ ] procédure rollback validée

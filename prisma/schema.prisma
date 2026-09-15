@@ -1,0 +1,535 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── Catalogue ───────────────────────────────
+
+model Category {
+  id        Int         @id @default(autoincrement())
+  name      String
+  slug      String      @unique
+  imageUrl  String?
+  icon      String? // emoji ou clé d'icône
+  order     Int         @default(0)
+  visible   Boolean     @default(true) // affiché dans le menu / le footer si peuplé
+  parentId  Int?
+  parent    Category?   @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[]  @relation("CategoryTree")
+  products  Product[]   @relation("ProductCategory")
+  createdAt DateTime    @default(now())
+}
+
+enum ProductStatus {
+  PENDING_REVIEW // à valider (issu du scraping)
+  PUBLISHED
+  HIDDEN
+}
+
+model Product {
+  id               Int           @id @default(autoincrement())
+  name             String
+  slug             String        @unique
+  brand            String?
+  shortDescription String?
+  description      String?
+  price            Float
+  promoPrice       Float?
+  sku              String?
+  barcode          String?
+  status           ProductStatus @default(PENDING_REVIEW)
+  stock            Int           @default(0)
+  lowStockThreshold Int          @default(3)
+  unlimitedStock   Boolean       @default(false)
+  isFeatured       Boolean       @default(false) // best-seller / mise en avant accueil
+  isNew            Boolean       @default(false)
+  viewsCount       Int           @default(0)
+  soldCount        Int           @default(0)
+  qualityScore     Int           @default(0) // 0..100 calculé par le module qualité
+  // Nom + marque repliés (minuscules, sans accents) : SQLite compare les LIKE
+  // octet à octet, ce champ permet de trouver « Avène » en tapant « avene ».
+  searchText       String?
+  categoryId       Int?
+  category         Category?     @relation("ProductCategory", fields: [categoryId], references: [id])
+  sourceName       String? // parapharma.ma | mapara.ma | phbeauty.ma | manuel
+  sourceUrl        String?
+  sourceId         String?
+  lastScrapedAt    DateTime?
+  lastSeenAt       DateTime?
+  images           ProductImage[]
+  favorites        Favorite[]
+  alerts           ProductAlert[]
+  qualityIssues    DataQualityIssue[]
+  cartItems        CartItem[]
+  reviews          Review[]
+  reputation       ProductReputation?
+  orderItems       OrderItem[]
+  priceHistory     PriceHistory[]
+  stockHistory     StockHistory[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([sourceName, sourceId])
+  @@index([sourceName])
+  @@index([status, categoryId])
+  @@index([soldCount])
+  @@index([createdAt])
+  @@index([brand])
+  @@index([searchText])
+  @@index([lastScrapedAt])
+  @@index([lastSeenAt])
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  order     Int     @default(0)
+
+  @@index([productId])
+}
+
+// Réputation agrégée d'un produit scrapée depuis des sources externes (Firecrawl)
+model ProductReputation {
+  id             Int      @id @default(autoincrement())
+  productId      Int      @unique
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  averageRating  Float    @default(0)
+  reviewsCount   Int      @default(0)
+  source         String? // nom du site d'origine de la réputation
+  status         String   @default("EMPTY") // EMPTY | READY | STALE | ERROR
+  label          String?
+  confidence     String? // LOW | MEDIUM | HIGH
+  positivePercent Int?
+  neutralPercent  Int?
+  negativePercent Int?
+  totalSources   Int      @default(0)
+  totalMentions  Int      @default(0)
+  summary        String?
+  positivesJson  String   @default("[]")
+  negativesJson  String   @default("[]")
+  sourcesJson    String   @default("[]")
+  generatedAt    DateTime?
+  expiresAt      DateTime?
+  lastError      String?
+  lastScrapedAt  DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model PriceHistory {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  oldPrice  Float?
+  newPrice  Float
+  reason    String   @default("scraping") // scraping | admin
+  changedAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+model StockHistory {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  oldStock  Int
+  newStock  Int
+  reason    String   @default("scraping")
+  changedAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+// ─────────────────────────────── Scraper ───────────────────────────────
+
+enum ScrapeStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+model ScrapeRun {
+  id            Int          @id @default(autoincrement())
+  sourceName    String
+  startedAt     DateTime     @default(now())
+  finishedAt    DateTime?
+  status        ScrapeStatus @default(RUNNING)
+  addedCount    Int          @default(0)
+  updatedCount  Int          @default(0)
+  missingCount  Int          @default(0)
+  errorCount    Int          @default(0)
+  log           String? // journal détaillé ligne par ligne
+
+  @@index([sourceName, startedAt])
+}
+
+// ─────────────────────────────── Clients & commandes ───────────────────────────────
+
+model Customer {
+  id                Int                  @id @default(autoincrement())
+  email             String               @unique
+  passwordHash      String
+  firstName         String
+  lastName          String
+  phone             String?
+  loyaltyPoints     Int                  @default(0)
+  addresses         Address[]
+  orders            Order[]
+  favorites         Favorite[]
+  cartItems         CartItem[]
+  loyaltyHistory    LoyaltyTransaction[]
+  createdAt         DateTime             @default(now())
+
+  @@index([createdAt])
+}
+
+model Favorite {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([customerId, productId])
+  @@index([productId])
+}
+
+enum LoyaltyType {
+  EARNED // points gagnés (1 DH = 1 point)
+  SPENT // points consommés
+}
+
+model LoyaltyTransaction {
+  id         Int          @id @default(autoincrement())
+  customerId Int
+  customer   Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type       LoyaltyType  @default(EARNED)
+  amount     Int // nombre de points
+  label      String // libellé lisible
+  orderId    Int?
+  order      Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt  DateTime     @default(now())
+
+  @@index([customerId])
+}
+
+model Address {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label      String   @default("Domicile")
+  fullName   String
+  phone      String
+  street     String
+  city       String
+  postalCode String?
+  isDefault  Boolean  @default(false)
+}
+
+enum OrderStatus {
+  NEW
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD // paiement à la livraison
+  CMI // carte bancaire
+}
+
+model Order {
+  id             Int           @id @default(autoincrement())
+  reference      String        @unique
+  confirmationToken String?    @unique // jeton opaque pour confirmer une commande sans compte
+  customerId     Int?
+  customer       Customer?     @relation(fields: [customerId], references: [id])
+  status         OrderStatus   @default(NEW)
+  paymentMethod  PaymentMethod
+  paid           Boolean       @default(false)
+  fullName       String
+  email          String
+  phone          String
+  addressStreet  String
+  addressCity    String
+  addressPostal  String?
+  subtotal       Float
+  shippingCost   Float
+  discount       Float         @default(0)
+  total          Float
+  couponCode     String?
+  notes          String?
+  pointsEarned   Int           @default(0) // points de fidélité gagnés sur cette commande
+  items          OrderItem[]
+  statusHistory  OrderStatusHistory[]
+  returnRequests ReturnRequest[]
+  loyaltyTx      LoyaltyTransaction[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([confirmationToken])
+}
+
+model OrderItem {
+  id          Int     @id @default(autoincrement())
+  orderId     Int
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   Int?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName String
+  productSlug String
+  imageUrl    String?
+  unitPrice   Float
+  quantity    Int
+}
+
+// Historique horodaté des changements de statut d'une commande (suivi client)
+model OrderStatusHistory {
+  id        Int         @id @default(autoincrement())
+  orderId   Int
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  from      OrderStatus?
+  to        OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ReturnRequest {
+  id          Int          @id @default(autoincrement())
+  orderId     Int
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fullName    String
+  email       String
+  reason      String // raison libre (produit endommagé, erreur de référence, etc.)
+  details     String?
+  status      ReturnStatus @default(PENDING)
+  adminNote   String? // réponse consultable côté client
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+  @@index([email])
+}
+
+// Alerte « produit de nouveau en stock » (client non connecté ou connecté)
+model ProductAlert {
+  id         Int       @id @default(autoincrement())
+  email      String
+  productId  Int
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  notifiedAt DateTime?
+
+  @@unique([email, productId])
+  @@index([productId])
+}
+
+// ─────────────────────────────── Marketing & contenu ───────────────────────────────
+
+enum CouponType {
+  PERCENT
+  FIXED
+}
+
+model Coupon {
+  id         Int        @id @default(autoincrement())
+  code       String     @unique
+  type       CouponType @default(PERCENT)
+  value      Float
+  minOrder   Float      @default(0)
+  active     Boolean    @default(true)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  usageLimit Int?
+  usedCount  Int        @default(0)
+  createdAt  DateTime   @default(now())
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Review {
+  id               Int          @id @default(autoincrement())
+  productId        Int
+  product          Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  author           String
+  authorEmail      String? // pour relier à une commande réelle (achat vérifié)
+  rating           Int // 1..5
+  comment          String?
+  verifiedPurchase Boolean      @default(false)
+  status           ReviewStatus @default(PENDING)
+  source           String       @default("customer") // customer | reputation
+  sourceUrl        String?
+  scrapedAt        DateTime?
+  createdAt        DateTime     @default(now())
+
+  @@index([productId, status])
+  @@index([source])
+  @@index([productId, createdAt])
+}
+
+enum BannerPosition {
+  HERO
+  STRIP
+}
+
+model Banner {
+  id        Int            @id @default(autoincrement())
+  title     String
+  subtitle  String?
+  ctaLabel  String?
+  ctaUrl    String?
+  imageUrl  String?
+  position  BannerPosition @default(HERO)
+  active    Boolean        @default(true)
+  order     Int            @default(0)
+}
+
+// ─────────────────────────────── Assistant IA ───────────────────────────────
+
+model ChatSession {
+  id         Int           @id @default(autoincrement())
+  sessionKey String        @unique
+  messages   ChatMessage[]
+  needs      ChatNeed?
+  startedAt  DateTime      @default(now())
+}
+
+model ChatMessage {
+  id        Int         @id @default(autoincrement())
+  sessionId Int
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String // user | assistant
+  content   String
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+// Contexte produit mémorisé par session de chat (assistant multi-tour)
+model ChatNeed {
+  id        Int         @id @default(autoincrement())
+  sessionId Int         @unique
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  keywords  String      @default("[]") // JSON array des mots-clés accumulés
+  maxPrice  Float?
+  minPrice  Float?
+  updatedAt DateTime    @updatedAt
+}
+
+// ─────────────────────────────── Admin & système ───────────────────────────────
+
+enum AdminRole {
+  SUPER_ADMIN
+  CATALOG_MANAGER
+  ORDER_MANAGER
+}
+
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         AdminRole @default(CATALOG_MANAGER)
+  active       Boolean   @default(true)
+  activityLogs ActivityLog[]
+  createdAt    DateTime  @default(now())
+}
+
+model ActivityLog {
+  id          Int        @id @default(autoincrement())
+  adminUserId Int?
+  adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+  action      String
+  entity      String?
+  entityId    String?
+  details     String?
+  ip          String?
+  createdAt   DateTime   @default(now())
+
+  @@index([adminUserId])
+  @@index([entity])
+  @@index([createdAt])
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+// ─────────────────────────────── Qualité & anomalies ───────────────────────────────
+
+model DataQualityIssue {
+  id         Int       @id @default(autoincrement())
+  productId  Int?
+  product    Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type       String // NO_IMAGE | NO_DESCRIPTION | ZERO_PRICE | DUPLICATE_NAME | INCOHERENT_PROMO
+  severity   Int       @default(2) // 1..3 (3 = bloquant)
+  details    String?
+  status     String    @default("OPEN") // OPEN | RESOLVED
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([status])
+  @@index([productId])
+  @@index([type])
+}
+
+// ─────────────────────────────── Emails ───────────────────────────────
+
+model EmailLog {
+  id        Int      @id @default(autoincrement())
+  to        String
+  subject   String
+  template  String
+  status    String // SENT | SKIPPED | FAILED
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ─────────────────────────────── Panier connecté ───────────────────────────────
+
+model CartItem {
+  id         Int       @id @default(autoincrement())
+  customerId Int
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  Int?
+  product    Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  quantity   Int       @default(1)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([customerId, productId])
+  @@index([productId])
+}

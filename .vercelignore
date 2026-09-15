@@ -1,0 +1,11 @@
+.next
+node_modules
+artifacts
+test-results
+logs
+*.log
+*.zip
+para-beauregard-mockup
+references
+.agents
+.claude

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fdf6e7"/><stop offset="1" stop-color="#fbe6bb"/>
+    </linearGradient>
+    <linearGradient id="tube" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#fdf7e9"/><stop offset="1" stop-color="#f3e3bd"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="48" fill="url(#bg)"/>
+  <circle cx="90" cy="310" r="85" fill="#f6d992" opacity=".4"/>
+  <ellipse cx="205" cy="333" rx="95" ry="16" fill="#b8860b" opacity=".14"/>
+  <rect x="186" y="78" width="38" height="26" rx="8" fill="#e9a13b"/>
+  <path d="M178 104 h54 l14 40 q6 90 6 130 q0 44 -47 44 t-47 -44 q0 -40 6 -130 z" fill="url(#tube)" stroke="#ecd9ac" stroke-width="2"/>
+  <rect x="172" y="182" width="66" height="84" rx="12" fill="#ffffff" stroke="#f2e2ba" stroke-width="2"/>
+  <circle cx="205" cy="210" r="13" fill="none" stroke="#e9a13b" stroke-width="5"/>
+  <path d="M199 210 h12 M205 204 v12" stroke="#e9a13b" stroke-width="4" stroke-linecap="round"/>
+  <rect x="184" y="232" width="42" height="5" rx="2.5" fill="#dfc48c"/>
+  <rect x="184" y="244" width="32" height="5" rx="2.5" fill="#dfc48c"/>
+  <path d="M192 118 q-10 70 -4 150" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity=".85"/>
+</svg>

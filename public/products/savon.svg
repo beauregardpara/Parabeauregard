@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f1fafb"/><stop offset="1" stop-color="#cdeef0"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#effaf9"/><stop offset="1" stop-color="#d7eeec"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="48" fill="url(#bg)"/>
+  <circle cx="320" cy="96" r="82" fill="#a3e2e4" opacity=".4"/>
+  <ellipse cx="205" cy="326" rx="110" ry="17" fill="#12707a" opacity=".13"/>
+  <rect x="120" y="150" width="170" height="150" rx="26" fill="url(#bar)" stroke="#c8e6e5" stroke-width="2.5" transform="rotate(-6 205 225)"/>
+  <text x="205" y="238" text-anchor="middle" font-family="Georgia, serif" font-size="44" font-style="italic" fill="#12a893" transform="rotate(-6 205 225)">PB</text>
+  <circle cx="160" cy="196" r="9" fill="#9adbd9" opacity=".8" transform="rotate(-6 205 225)"/>
+  <circle cx="252" cy="258" r="12" fill="#9adbd9" opacity=".6" transform="rotate(-6 205 225)"/>
+</svg>

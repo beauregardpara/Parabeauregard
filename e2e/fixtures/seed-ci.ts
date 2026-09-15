@@ -22,6 +22,8 @@ if (!isLocal) {
 const prisma = new PrismaClient();
 const FIXTURE_IMAGE = "/images/premium/univers/face.webp";
 export const FIXTURE_SLUG = "guinot-longue-vie-creme-jeunesse-revitalisante-visage-homme-50-ml";
+export const HIDDEN_FIXTURE_SLUG = "ci-hidden-fixture-product";
+export const HIDDEN_FIXTURE_NAME = "CI Hidden Fixture Zephyrine";
 
 async function main() {
   const products = await prisma.product.findMany({ select: { id: true, name: true, brand: true } });
@@ -61,8 +63,30 @@ async function main() {
   await prisma.productImage.create({ data: { productId: fixture.id, url: FIXTURE_IMAGE, alt: name, order: 0 } });
   await prisma.productReputation.deleteMany({ where: { productId: fixture.id } });
 
+  // Non-public fixture: must never leak through the storefront (title, metadata, sitemap, search).
+  const hiddenData = {
+    name: HIDDEN_FIXTURE_NAME,
+    brand: "Guinot",
+    shortDescription: "Fiche archivée de test CI.",
+    description: "Fiche archivée de test CI.",
+    price: 123,
+    status: "HIDDEN" as const,
+    stock: 5,
+    unlimitedStock: false,
+    categoryId: category?.id ?? null,
+    sourceName: "manuel",
+    searchText: buildSearchText([HIDDEN_FIXTURE_NAME, "Guinot"]),
+  };
+  const hidden = await prisma.product.upsert({
+    where: { slug: HIDDEN_FIXTURE_SLUG },
+    update: hiddenData,
+    create: { ...hiddenData, slug: HIDDEN_FIXTURE_SLUG, sku: "CI-HIDDEN-001" },
+  });
+  await prisma.productImage.deleteMany({ where: { productId: hidden.id } });
+  await prisma.productImage.create({ data: { productId: hidden.id, url: FIXTURE_IMAGE, alt: HIDDEN_FIXTURE_NAME, order: 0 } });
+
   const published = await prisma.product.count({ where: { status: "PUBLISHED" } });
-  console.log(JSON.stringify({ ok: true, products: products.length + 1, published, fixture: FIXTURE_SLUG }));
+  console.log(JSON.stringify({ ok: true, products: products.length + 2, published, fixture: FIXTURE_SLUG }));
 }
 
 main()

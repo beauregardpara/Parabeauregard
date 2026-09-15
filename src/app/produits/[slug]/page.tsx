@@ -26,7 +26,9 @@ import { getProductReputation } from "@/lib/reputation";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const p = await getProductBySlug(slug);
-  if (!p) return {};
+  // Never derive public metadata (title, description, OpenGraph) from a product
+  // that is not published: the storefront must behave as if it does not exist.
+  if (!p || p.status !== "PUBLISHED") notFound();
   return {
     title: p.name,
     description: p.shortDescription ?? p.description?.slice(0, 160) ?? `Achetez ${p.name} au meilleur prix au Maroc.`,

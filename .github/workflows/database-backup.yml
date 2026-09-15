@@ -70,12 +70,23 @@ jobs:
           test -n "$SUPABASE_SECRET_KEY" || { echo "SUPABASE_SECRET_KEY secret is missing"; exit 1; }
           pg_dump --version
 
+      - name: Describe database connection (no secret values)
+        shell: bash
+        run: |
+          node -e '
+            const u = new URL(process.env.SUPABASE_DB_URL);
+            const host = u.hostname;
+            const kind = /\.pooler\.supabase\.com$/.test(host) ? "supavisor-pooler" : /^db\..+\.supabase\.co$/.test(host) ? "direct-db-host (IPv6-only on Supabase)" : "other";
+            console.log(JSON.stringify({ scheme: u.protocol, hostKind: kind, port: u.port || "5432", hasPassword: Boolean(u.password), userHasProjectRef: u.username.includes("."), sslmode: u.searchParams.get("sslmode") }));
+          '
+
       - name: Record live row counts (read-only)
         id: live
         shell: bash
         run: |
           set -euo pipefail
-          q() { psql "$SUPABASE_DB_URL" -X -At -v ON_ERROR_STOP=1 -c "$1" 2>/dev/null; }
+          redact() { sed -E 's/"[^"]*"/"<redacted>"/g; s/\(([0-9a-fA-F:.]+)\)/(<ip>)/g'; }
+          q() { psql "$SUPABASE_DB_URL" -X -At -v ON_ERROR_STOP=1 -c "$1" 2> >(redact >&2); }
           products=$(q 'SELECT count(*) FROM public."Product"')
           categories=$(q 'SELECT count(*) FROM public."Category"')
           images=$(q 'SELECT count(*) FROM public."ProductImage"')

@@ -74,10 +74,26 @@ jobs:
         shell: bash
         run: |
           node -e '
-            const u = new URL(process.env.SUPABASE_DB_URL);
+            const raw = process.env.SUPABASE_DB_URL || "";
+            const shape = {
+              length: raw.length,
+              startsWithPostgresScheme: /^postgres(ql)?:\/\//.test(raw),
+              hasQuotes: /["\x27]/.test(raw),
+              hasWhitespaceOrNewline: /\s/.test(raw),
+              looksLikeEnvAssignment: /^[A-Z_]+=/.test(raw),
+              hasPasswordPlaceholder: /YOUR-PASSWORD/i.test(raw),
+              atSignCount: (raw.match(/@/g) || []).length,
+            };
+            let u;
+            try { u = new URL(raw); } catch {
+              console.log(JSON.stringify({ validUrl: false, ...shape }));
+              console.log("SUPABASE_DB_URL is not a valid PostgreSQL URL. Re-enter it (raw value, no quotes/prefix, URL-encoded password).");
+              process.exit(1);
+            }
             const host = u.hostname;
             const kind = /\.pooler\.supabase\.com$/.test(host) ? "supavisor-pooler" : /^db\..+\.supabase\.co$/.test(host) ? "direct-db-host (IPv6-only on Supabase)" : "other";
-            console.log(JSON.stringify({ scheme: u.protocol, hostKind: kind, port: u.port || "5432", hasPassword: Boolean(u.password), userHasProjectRef: u.username.includes("."), sslmode: u.searchParams.get("sslmode") }));
+            if (shape.hasPasswordPlaceholder) { console.log(JSON.stringify({ validUrl: true, ...shape })); console.log("SUPABASE_DB_URL still contains the [YOUR-PASSWORD] placeholder."); process.exit(1); }
+            console.log(JSON.stringify({ validUrl: true, ...shape, scheme: u.protocol, hostKind: kind, port: u.port || "5432", hasPassword: Boolean(u.password), userHasProjectRef: u.username.includes("."), sslmode: u.searchParams.get("sslmode") }));
           '
 
       - name: Record live row counts (read-only)

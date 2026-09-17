@@ -13,6 +13,15 @@ type Provider = { kind: "none" } | { kind: "resend"; from: string; apiKey: strin
 
 const FROM_FALLBACK = process.env.MAIL_FROM ?? process.env.EMAIL_FROM ?? "Para Beauregard <no-reply@para-beauregard.ma>";
 
+/**
+ * Adresse de réponse par défaut : l'expéditeur transactionnel est un
+ * `no-reply`, donc sans Reply-To une réponse client se perd. Les appelants
+ * qui passent leur propre `replyTo` (ex. notification interne renvoyant vers
+ * le client) restent prioritaires.
+ */
+const DEFAULT_REPLY_TO: string | undefined =
+  process.env.MAIL_REPLY_TO?.includes("@") ? process.env.MAIL_REPLY_TO : BUSINESS.email;
+
 function resolveProvider(): Provider {
   if (process.env.EMAIL_FROM === "disabled") return { kind: "none" };
   const resendFrom = process.env.RESEND_FROM ?? process.env.MAIL_FROM ?? process.env.EMAIL_FROM;
@@ -131,7 +140,8 @@ export async function sendTransactionalEmail(params: {
   replyTo?: string;
 }): Promise<"sent" | "skipped" | "failed"> {
   const { to, template, data } = params;
-  const replyTo = params.replyTo && params.replyTo.includes("@") ? params.replyTo : undefined;
+  const replyTo =
+    params.replyTo && params.replyTo.includes("@") ? params.replyTo : DEFAULT_REPLY_TO;
   if (!to || !to.includes("@")) return "skipped";
 
   const provider = resolveProvider();

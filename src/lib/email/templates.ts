@@ -1,4 +1,5 @@
 import type { EmailData, EmailTemplate } from "./index";
+import { SITE_URL } from "@/config/site";
 
 /**
  * Rendus HTML minimaux (inline, sans dépendance) pour les emails
@@ -6,7 +7,7 @@ import type { EmailData, EmailTemplate } from "./index";
  * jamais inventées.
  */
 
-const BASE_LINK = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+const BASE_LINK = SITE_URL;
 
 /** Échappe tout texte interpolé dans le HTML (anti-XSS emails). */
 function esc(value: string): string {

@@ -47,7 +47,3 @@ next-env.d.ts
 /*.zip
 
 .vercel
-.env*
-
-.vercel
-.env*

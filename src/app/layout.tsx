@@ -16,9 +16,10 @@ import { syncCartForCustomer } from "@/lib/actions/cart";
 import { syncFavoriteForCustomer } from "@/lib/actions/favorites";
 import { headers } from "next/headers";
 import { BUSINESS } from "@/config/business";
+import { SITE_URL } from "@/config/site";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Para Beauregard — Parapharmacie en ligne au Maroc",
     template: "%s | Para Beauregard",
@@ -122,7 +123,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const categories = (await getNavCategories()) as NavCategory[];
   const { cartItems, favorites } = await loadSyncedState();
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://para-beauregard.vercel.app";
+  const siteUrl = SITE_URL;
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",

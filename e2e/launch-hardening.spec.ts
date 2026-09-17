@@ -42,7 +42,18 @@ test.describe("Lancement — honnêteté et sécurité", () => {
     // La fiche commande doit s'afficher entièrement (régression : bouton d'impression côté serveur).
     await expect(page.getByRole("heading", { name: "Statut de la commande" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Imprimer bon de livraison/ })).toBeVisible();
-    await page.getByRole("button", { name: "Annuler la commande de démonstration" }).click();
-    await expect(page.getByRole("button", { name: "Annuler la commande de démonstration" })).toHaveCount(0, { timeout: 15_000 });
+    // L'annulation est un effet de bord unique : lors d'une nouvelle tentative
+    // Playwright, la commande est déjà annulée et le bouton a légitimement
+    // disparu — rejouer le clic échouerait alors sur un test pourtant vert.
+    // On vérifie donc l'état final réellement attendu (le statut persisté),
+    // ce qui est plus strict que la seule disparition du bouton.
+    const cancelButton = page.getByRole("button", { name: "Annuler la commande de démonstration" });
+    if ((await cancelButton.count()) > 0) {
+      await cancelButton.click();
+      await expect(cancelButton).toHaveCount(0, { timeout: 45_000 });
+    }
+    await page.reload();
+    await expect(page.locator('select[name="status"]')).toHaveValue("CANCELLED");
+    await expect(page.getByRole("button", { name: "Annuler la commande de démonstration" })).toHaveCount(0);
   });
 });

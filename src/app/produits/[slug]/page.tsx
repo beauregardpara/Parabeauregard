@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { absoluteUrl } from "@/config/site";
 import { getProductBySlug } from "@/lib/search";
 import { getSimilarProducts, getPopularProducts } from "@/lib/recommendations";
 import { discountPercent, formatPrice } from "@/lib/format";
@@ -114,7 +115,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       "@type": "ListItem",
       position: i + 1,
       name: c.name,
-      item: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://para-beauregard.vercel.app"}${c.href}`,
+      item: absoluteUrl(c.href),
     })),
   };
   const safeBreadcrumbJsonLd = JSON.stringify(breadcrumbJsonLd)

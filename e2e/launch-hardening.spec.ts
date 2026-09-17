@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { adminLogin } from "./fixtures/admin-login";
 
 test.describe("Lancement — honnêteté et sécurité", () => {
   test("les mentions légales signalent les informations en attente sans les inventer", async ({ page }) => {
@@ -30,15 +31,14 @@ test.describe("Lancement — honnêteté et sécurité", () => {
     test.skip(!password, "SEED_ADMIN_PASSWORD non défini");
     // Action à effet de bord unique : exécutée une seule fois (projet desktop).
     test.skip(testInfo.project.name !== "chromium", "exécuté sur le projet chromium uniquement");
-    await page.goto("/admin/login");
-    await page.locator('input[name="email"]:visible').fill("admin@demo.invalid");
-    await page.locator('input[name="password"]:visible').fill(password);
-    await page.getByRole("button", { name: "Se connecter" }).click();
-    await page.waitForURL((url) => url.pathname.startsWith("/admin") && !url.pathname.startsWith("/admin/login"), { timeout: 20_000 });
+    await adminLogin(page, testInfo, "admin@demo.invalid", password);
 
     await page.goto("/admin/commandes?q=482910");
-    await page.locator("tbody tr").first().getByRole("link").first().click();
-    await expect(page).toHaveURL(/\/admin\/commandes\/\d+$/, { timeout: 15_000 });
+    const orderLink = page.locator("tbody tr").first().getByRole("link").first();
+    await expect(orderLink).toContainText("482910");
+    const href = await orderLink.getAttribute("href");
+    expect(href).toMatch(/^\/admin\/commandes\/\d+$/);
+    await page.goto(href!);
     // La fiche commande doit s'afficher entièrement (régression : bouton d'impression côté serveur).
     await expect(page.getByRole("heading", { name: "Statut de la commande" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Imprimer bon de livraison/ })).toBeVisible();

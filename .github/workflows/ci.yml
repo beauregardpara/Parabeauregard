@@ -58,6 +58,9 @@ jobs:
       # Comptes de la base jetable de CI uniquement (jamais utilisés ailleurs).
       SEED_ADMIN_PASSWORD: ci-only-${{ github.run_id }}-superadmin
       SEED_CATALOG_PASSWORD: ci-only-${{ github.run_id }}-catalogue
+      # Les tests E2E envoient une adresse X-Forwarded-For distincte par test pour ne
+      # pas partager la limite de connexions admin (voir e2e/fixtures/admin-login.ts).
+      TRUSTED_PROXY: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

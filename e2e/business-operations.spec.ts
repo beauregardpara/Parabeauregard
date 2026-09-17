@@ -1,17 +1,10 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { adminLogin } from "./fixtures/admin-login";
 
 // Comptes synthétiques créés par prisma/seed.ts dans la base jetable de CI ; les
 // mots de passe viennent des variables SEED_*_PASSWORD définies par le workflow.
 const SEED_SUPER_ADMIN = { email: "admin@demo.invalid", password: process.env.SEED_ADMIN_PASSWORD ?? "" };
 const SEED_CATALOG_MANAGER = { email: "catalogue@demo.invalid", password: process.env.SEED_CATALOG_PASSWORD ?? "" };
-
-async function adminLogin(page: Page, account: { email: string; password: string }) {
-  await page.goto("/admin/login");
-  await page.locator('input[name="email"]:visible').fill(account.email);
-  await page.locator('input[name="password"]:visible').fill(account.password);
-  await page.getByRole("button", { name: "Se connecter" }).click();
-  await page.waitForURL((url) => url.pathname.startsWith("/admin") && !url.pathname.startsWith("/admin/login"), { timeout: 20_000 });
-}
 
 test.describe("Exploitation quotidienne", () => {
   test("le formulaire de contact accepte un message sans sujet", async ({ page }) => {
@@ -53,9 +46,9 @@ test.describe("Exploitation quotidienne", () => {
     expect(body.reply).toMatch(/DH/);
   });
 
-  test("le super-admin retrouve une commande par sa référence", async ({ page }) => {
+  test("le super-admin retrouve une commande par sa référence", async ({ page }, testInfo) => {
     test.skip(!SEED_SUPER_ADMIN.password, "SEED_ADMIN_PASSWORD non défini");
-    await adminLogin(page, SEED_SUPER_ADMIN);
+    await adminLogin(page, testInfo, SEED_SUPER_ADMIN.email, SEED_SUPER_ADMIN.password);
     await expect(page.getByText("Commandes aujourd'hui")).toBeVisible();
     await page.goto("/admin/commandes");
     const search = page.getByLabel("Rechercher une commande");
@@ -66,9 +59,9 @@ test.describe("Exploitation quotidienne", () => {
     await expect(page.locator("tbody tr").first()).toContainText("PB-");
   });
 
-  test("un gestionnaire catalogue n'accède pas aux clients", async ({ page }) => {
+  test("un gestionnaire catalogue n'accède pas aux clients", async ({ page }, testInfo) => {
     test.skip(!SEED_CATALOG_MANAGER.password, "SEED_CATALOG_PASSWORD non défini");
-    await adminLogin(page, SEED_CATALOG_MANAGER);
+    await adminLogin(page, testInfo, SEED_CATALOG_MANAGER.email, SEED_CATALOG_MANAGER.password);
     await page.goto("/admin/clients");
     await expect(page).toHaveURL(/\/admin\/produits/);
     await expect(page.locator("body")).not.toContainText("Points fidélité");

@@ -7,6 +7,12 @@ const STOPWORDS = new Set([
   "produit", "produits", "article", "articles", "budget", "prix", "moins", "que", "qui",
   "est", "suis", "avoir", "femme", "homme", "enfant",
   "dh", "dhs", "mad", "euros", "merci", "svp", "bonjour", "salut", "hello",
+  // Mots de question ou de liaison : ils ne décrivent jamais un produit.
+  "quel", "quelle", "quels", "quelles", "quoi", "comment", "prendre", "faut", "faire", "dois", "doit",
+  "peux", "peut", "pouvez", "utiliser", "meilleur", "meilleure", "conseil", "conseillez", "recommandez",
+  "et", "ou", "au", "aux", "en", "sur", "dans", "par", "ce", "cette", "ces", "moi", "vous", "tu",
+  // Mots ajoutés par applyContextToMessage : ils ne décrivent pas le besoin.
+  "contexte", "recherche", "continue",
 ]);
 
 /**
@@ -35,6 +41,44 @@ const SYNONYM_GROUPS: string[][] = [
 
 function normalize(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Demandes de décision médicale (médicament, antibiotique, posologie,
+ * prescription, choix thérapeutique, infection…) : l'assistant ne propose
+ * alors aucun produit. Garde-fou déterministe, actif avec ou sans modèle IA.
+ * « traitement » seul reste une recherche produit (« traitement anti-chute ») :
+ * il n'est bloqué que dans une tournure de décision médicale.
+ */
+const MEDICAL_REQUEST_RE = new RegExp(
+  [
+    "\\b(?:antibiotiques?|antibiotherapies?|anti-inflammatoires?|antiviraux|antiviral|antifongiques?)\\b",
+    "\\b(?:medicaments?|medocs?|ordonnances?|posologies?|dosages?|surdosage|prescriptions?|prescrire|prescrit)\\b",
+    "\\b(?:therapeutiques?|infections?|infecte|infectieu\\w*|fievre|diagnostics?|symptomes?|maladies?|vaccins?)\\b",
+    "\\b(?:quel|quelle|quels|quelles) traitements?\\b",
+    "\\btraitements? (?:medica\\w*|antibiotiques?|pour (?:une?|la|le|l|cette|ce|mon|ma) (?:infection|maladie|cystite|angine|otite|grippe))\\b",
+  ].join("|")
+);
+
+/** Signes d'alerte : seulement alors, la réponse mentionne les urgences. */
+const URGENT_SIGNS_RE =
+  /\b(?:urgences?|urgent|saignements?|saigne|respire mal|difficulte a respirer|douleur (?:thoracique|a la poitrine)|malaise|perte de connaissance|evanoui\w*|convulsions?|forte fievre|fievre elevee|sang)\b/;
+
+export const MEDICAL_SAFETY_REPLY =
+  "Je ne peux pas vous conseiller de médicament, d'antibiotique ni de posologie : le bon traitement dépend de votre situation et doit être décidé par un professionnel. Demandez conseil à un pharmacien ou consultez un médecin. Je peux en revanche vous orienter vers des soins de parapharmacie (hygiène, hydratation, protection solaire…).";
+
+export const MEDICAL_URGENT_NOTE =
+  "Si les symptômes sont graves ou s'aggravent rapidement, contactez sans attendre les urgences : 141 (SAMU) ou 15 (Protection civile).";
+
+export function detectMedicalRequest(message: string): boolean {
+  return MEDICAL_REQUEST_RE.test(normalize(message));
+}
+
+/** Réponse de sécurité, avec la mention des urgences uniquement si nécessaire. */
+export function buildMedicalSafetyReply(message: string): string {
+  return URGENT_SIGNS_RE.test(normalize(message))
+    ? `${MEDICAL_SAFETY_REPLY}\n\n${MEDICAL_URGENT_NOTE}`
+    : MEDICAL_SAFETY_REPLY;
 }
 
 const GROUP_TRIGGER_RE = SYNONYM_GROUPS.map(
@@ -96,12 +140,29 @@ export function parseNeed(message: string): {
 /** Recherche produits pour le chat : uniquement publiés et disponibles. */
 export async function findProductsForChat(message: string, limit = 6): Promise<ChatProductHit[]> {
   const { keywords, maxPrice, minPrice } = parseNeed(message);
+  // Sans mot-clé exploitable, on ne recommande rien plutôt que des produits au hasard.
+  if (keywords.length === 0) return [];
+
+  const msgN = normalize(message);
+  const searchTerms = [
+    ...keywords,
+    ...SYNONYM_GROUPS.filter((_, gi) => GROUP_TRIGGER_RE[gi].test(msgN)).flat(),
+  ].filter((term, i, all) => term.length >= 3 && all.indexOf(term) === i);
 
   const pool = await db.product.findMany({
     where: {
       status: "PUBLISHED",
       AND: [
         { OR: [{ unlimitedStock: true }, { stock: { gt: 0 } }] },
+        // Recherche dans tout le catalogue (pas seulement les meilleures ventes)
+        // des fiches qui contiennent réellement le besoin.
+        {
+          OR: searchTerms.flatMap((term) => [
+            { searchText: { contains: term } },
+            { name: { contains: term } },
+            { brand: { contains: term } },
+          ]),
+        },
         ...(maxPrice != null || minPrice != null
           ? [{
               price: {
@@ -117,40 +178,38 @@ export async function findProductsForChat(message: string, limit = 6): Promise<C
     include: { images: { orderBy: { order: "asc" }, take: 1 } },
   });
 
-  // Le budget seul ne doit jamais suffire : sans mot-clé on garde les plus vendus.
-  const hasKeywords = keywords.length > 0;
-  const msgN = normalize(message);
-
   const scored = pool
     .map((p) => {
       const nameN = normalize(p.name);
       const brandN = normalize(p.brand ?? "");
       const shortN = normalize(p.shortDescription ?? "");
       const descN = normalize(p.description ?? "");
+      const searchN = p.searchText ?? "";
 
-      let score = 0;
-      if (hasKeywords) {
-        for (const kw of keywords) {
-          if (nameN.includes(kw)) score += 3;
-          else if (brandN.includes(kw)) score += 2;
-          else if (shortN.includes(kw)) score += 1.5;
-          else if (descN.includes(kw)) score += 1;
-        }
-        // Boost par groupes de synonymes (ex. « peau sèche » → hydratant…)
-        const haystack = `${nameN} ${shortN} ${descN}`;
-        GROUP_TRIGGER_RE.forEach((re, gi) => {
-          if (!re.test(msgN)) return;
-          if (SYNONYM_GROUPS[gi].some((w) => haystack.includes(w))) score += 2.5;
-        });
-      } else {
-        score += 1;
+      let relevance = 0;
+      let directHits = 0;
+      for (const kw of keywords) {
+        if (nameN.includes(kw)) relevance += 3;
+        else if (brandN.includes(kw)) relevance += 2;
+        else if (shortN.includes(kw)) relevance += 1.5;
+        else if (descN.includes(kw)) relevance += 1;
+        else if (searchN.includes(kw)) relevance += 1;
+        else continue;
+        directHits += 1;
       }
+      // Boost par groupes de synonymes (ex. « peau sèche » → hydratant…)
+      const haystack = `${nameN} ${shortN} ${descN}`;
+      GROUP_TRIGGER_RE.forEach((re, gi) => {
+        if (!re.test(msgN)) return;
+        if (SYNONYM_GROUPS[gi].some((w) => haystack.includes(w))) relevance += 2.5;
+      });
 
-      score += (p.promoPrice ? 0.5 : 0) + Math.min(p.soldCount / 20, 1.5);
-
-      return { p, score };
+      // La popularité départage des fiches pertinentes, jamais plus.
+      const score = relevance + (p.promoPrice ? 0.5 : 0) + Math.min(p.soldCount / 20, 1.5);
+      return { p, score, directHits };
     })
-    .filter(({ score }) => hasKeywords || score > 1)
+    // Un synonyme seul ne suffit pas : il faut au moins un mot du besoin.
+    .filter(({ directHits }) => directHits > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 

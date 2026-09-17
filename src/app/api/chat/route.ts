@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@/lib/db";
-import { findProductsForChat, type ChatProductHit } from "@/lib/chat";
+import { buildMedicalSafetyReply, detectMedicalRequest, findProductsForChat, type ChatProductHit } from "@/lib/chat";
 import { applyContextToMessage, getChatNeed, updateChatNeed } from "@/lib/chat/context";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/security/rate-limit";
 import { logger, newRequestId } from "@/lib/logger";
@@ -160,6 +160,14 @@ export async function POST(req: NextRequest) {
       create: { sessionKey },
     });
     await db.chatMessage.create({ data: { sessionId: session.id, role: "user", content: message } });
+
+    // Garde-fou santé déterministe, AVANT tout appel IA ou recherche catalogue :
+    // aucune recommandation produit pour une demande de décision médicale.
+    if (detectMedicalRequest(message)) {
+      const reply = buildMedicalSafetyReply(message);
+      await db.chatMessage.create({ data: { sessionId: session.id, role: "assistant", content: reply } });
+      return NextResponse.json({ reply, products: [], sessionKey });
+    }
 
     // Contexte multi-tour : on mémoïse le besoin puis on l'injecte si le
     // message courant est trop court pour être exploitable seul.

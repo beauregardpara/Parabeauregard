@@ -5,12 +5,17 @@ import { ContentPage } from "@/components/content-page";
 import { ContactForm } from "@/components/contact-form";
 import { BUSINESS, BUSINESS_MAPS_URL } from "@/config/business";
 import { whatsappLink } from "@/lib/constants";
+import { getBusinessPolicies } from "@/config/legal";
 
 export const metadata: Metadata = { title: "Contact" };
 
 export default function ContactPage() {
+  const { openingHours } = getBusinessPolicies();
+  const subtitle = openingHours
+    ? `Notre équipe vous répond ${openingHours}.`
+    : "Notre équipe vous répond par téléphone, WhatsApp ou email.";
   return (
-    <ContentPage title="Contactez-nous" subtitle="Notre équipe vous répond du lundi au samedi, 9h–19h.">
+    <ContentPage title="Contactez-nous" subtitle={subtitle}>
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-para-100 bg-white p-5 text-center shadow-sm">
           <Phone className="mx-auto text-para-700" size={25} strokeWidth={1.6} aria-hidden />

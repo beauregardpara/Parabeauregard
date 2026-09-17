@@ -25,6 +25,7 @@ import {
 import { checkRateLimit, RATE_LIMITS, getServerActionIp } from "@/lib/security/rate-limit";
 import { sendTransactionalEmail } from "@/lib/email";
 import { statusLabel } from "@/lib/order-status";
+import { canCancelAsDemo } from "@/lib/demo-data";
 import { notifyStockAlerts } from "@/lib/product-alerts";
 import { slugify } from "@/lib/format";
 import { deleteSupabaseProductImage, uploadSupabaseProductImage } from "@/lib/storage/supabase-admin";
@@ -597,6 +598,41 @@ export async function updateOrderStatus(formData: FormData) {
       },
     });
   }
+  revalidatePath("/admin/commandes");
+  revalidatePath(`/admin/commandes/${id}`);
+}
+
+/**
+ * Annulation d'une commande de démonstration / QA (adresse email réservée aux
+ * tests). Contrairement à l'annulation normale, aucun mouvement de stock ni
+ * email : ces commandes n'ont pas toujours décrémenté le stock réel. L'historique
+ * est conservé (rien n'est supprimé).
+ */
+export async function cancelDemoOrder(formData: FormData) {
+  await requireRole("SUPER_ADMIN");
+  const id = Number(formData.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return;
+  const order = await db.order.findUnique({ where: { id } });
+  if (!order || !canCancelAsDemo(order)) return;
+
+  await db.$transaction(async (tx) => {
+    if (order.customerId && order.pointsEarned > 0) {
+      await tx.customer.update({
+        where: { id: order.customerId },
+        data: { loyaltyPoints: { decrement: order.pointsEarned } },
+      });
+    }
+    await tx.order.update({ where: { id }, data: { status: "CANCELLED" } });
+    await tx.orderStatusHistory.create({
+      data: {
+        orderId: id,
+        from: order.status,
+        to: "CANCELLED",
+        note: "Commande de démonstration/QA annulée — stock non modifié",
+      },
+    });
+  });
+  await logAction("Annulation commande démo", "Order", String(id), order.reference);
   revalidatePath("/admin/commandes");
   revalidatePath(`/admin/commandes/${id}`);
 }

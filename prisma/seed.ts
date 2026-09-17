@@ -5,6 +5,7 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { createHmac } from "crypto";
+import { SEED_ACCOUNTS, assertSeedTargetIsSafe, seedPassword } from "./seed-credentials";
 
 const prisma = new PrismaClient();
 
@@ -122,9 +123,11 @@ const PRODUCTS: SeedProduct[] = [
 ];
 
 async function main() {
-  if (process.env.NODE_ENV === "production" && process.env.ALLOW_SEED_IN_PROD !== "true") {
+  try {
+    assertSeedTargetIsSafe();
+  } catch (e) {
     console.error(
-      "Refus d'exécuter le seed en production : il supprimerait les données et créerait des comptes par défaut.\n" +
+      `${(e as Error).message}\nLe seed supprime les données : il ne doit viser qu'une base locale ou de CI.\n` +
         "Définissez ALLOW_SEED_IN_PROD=true uniquement si vous savez exactement ce que vous faites."
     );
     process.exit(1);
@@ -268,18 +271,22 @@ async function main() {
   });
 
   console.log("👥 Comptes…");
+  // Aucun mot de passe dans le dépôt : variables SEED_*_PASSWORD, sinon aléatoire (non affiché).
+  const credentials = Object.fromEntries(
+    Object.entries(SEED_ACCOUNTS).map(([key, account]) => [key, seedPassword(account.passwordEnv)])
+  ) as Record<keyof typeof SEED_ACCOUNTS, { password: string; generated: boolean }>;
   await prisma.adminUser.createMany({
     data: [
-      { email: "admin@parabeauregard.ma", passwordHash: hashPassword("admin123"), name: "Mohamed Taha", role: "SUPER_ADMIN" },
-      { email: "gestionnaire@parabeauregard.ma", passwordHash: hashPassword("gestion123"), name: "Salwa Catalogue", role: "CATALOG_MANAGER" },
-      { email: "commandes@parabeauregard.ma", passwordHash: hashPassword("commandes123"), name: "Karim Commandes", role: "ORDER_MANAGER" },
+      { email: SEED_ACCOUNTS.superAdmin.email, passwordHash: hashPassword(credentials.superAdmin.password), name: SEED_ACCOUNTS.superAdmin.name, role: "SUPER_ADMIN" },
+      { email: SEED_ACCOUNTS.catalogManager.email, passwordHash: hashPassword(credentials.catalogManager.password), name: SEED_ACCOUNTS.catalogManager.name, role: "CATALOG_MANAGER" },
+      { email: SEED_ACCOUNTS.orderManager.email, passwordHash: hashPassword(credentials.orderManager.password), name: SEED_ACCOUNTS.orderManager.name, role: "ORDER_MANAGER" },
     ],
   });
 
   const customer = await prisma.customer.create({
     data: {
-      email: "client@demo.ma",
-      passwordHash: hashPassword("client123"),
+      email: SEED_ACCOUNTS.customer.email,
+      passwordHash: hashPassword(credentials.customer.password),
       firstName: "Imane",
       lastName: "El Fassi",
       phone: "0661223344",
@@ -340,8 +347,9 @@ async function main() {
   console.log(`
 ✅ Seed terminé !
    • ${PRODUCTS.length} produits publiés + ${pendingSamples.length} à valider
-   • Admin   : admin@parabeauregard.ma / admin123
-   • Client  : client@demo.ma / client123
+   • Comptes : ${Object.entries(SEED_ACCOUNTS)
+     .map(([key, a]) => `${a.email} (${credentials[key as keyof typeof SEED_ACCOUNTS].generated ? "mot de passe aléatoire non affiché" : `mot de passe = $${a.passwordEnv}`})`)
+     .join(" · ")}
    • Coupons : BIENVENUE10 · SOLAIRE20 · MOINS29
 `);
 }

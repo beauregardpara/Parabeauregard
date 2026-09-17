@@ -5,11 +5,14 @@ import { db } from "@/lib/db";
 import { formatDate, formatPrice } from "@/lib/format";
 import { PageHeader } from "@/components/admin-shell";
 import OrderStatusForm from "@/components/admin/order-status-form";
+import { PrintButton } from "@/components/admin/print-button";
 import { FileText } from "lucide-react";
 import { requireAdminPagePermission } from "@/lib/auth";
+import { canCancelAsDemo } from "@/lib/demo-data";
+import { cancelDemoOrder } from "@/lib/actions/admin";
 
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdminPagePermission("orders:read");
+  const admin = await requireAdminPagePermission("orders:read");
   const { id } = await params;
   const orderId = parseInt(id);
   if (!Number.isFinite(orderId)) notFound();
@@ -80,6 +83,22 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             <OrderStatusForm orderId={order.id} currentStatus={order.status} />
           </section>
 
+          {admin.role === "SUPER_ADMIN" && canCancelAsDemo(order) && (
+            <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+              <h2 className="mb-1 font-display font-bold">Commande de démonstration</h2>
+              <p className="mb-3 text-xs leading-relaxed">
+                L'adresse email est réservée aux tests. Cette annulation conserve l'historique, ne
+                modifie pas le stock et n'envoie aucun email.
+              </p>
+              <form action={cancelDemoOrder}>
+                <input type="hidden" name="id" value={order.id} />
+                <button type="submit" className="btn-3d rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white">
+                  Annuler la commande de démonstration
+                </button>
+              </form>
+            </section>
+          )}
+
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-3 font-display font-bold">Client & livraison</h2>
             <p className="text-sm leading-relaxed">
@@ -99,10 +118,10 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             )}
           </section>
 
-          <button onClick={() => typeof window !== "undefined" && window.print()}
-            className="btn-shine btn-3d w-full rounded-xl bg-para-900 py-3 text-sm font-bold text-white shadow-lift">
-            🖨 Imprimer bon de livraison / facture
-          </button>
+          <PrintButton
+            label="🖨 Imprimer bon de livraison / facture"
+            className="btn-shine btn-3d w-full rounded-xl bg-para-900 py-3 text-sm font-bold text-white shadow-lift"
+          />
         </aside>
       </div>
     </>

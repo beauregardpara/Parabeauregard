@@ -120,7 +120,37 @@ Paiement accepté : **à la livraison (espèces)** uniquement.
   pas partir : consultez **Système & santé**, et suivez les commandes directement
   dans l'administration.
 
-## 8. Vérifier que tout va bien
+## 8. Informations légales et politiques commerciales
+
+Ces informations ne sont jamais inventées. Elles se renseignent dans Vercel →
+projet `para-beauregard` → Settings → Environment Variables (environnement
+Production), puis Deployments → dernier déploiement → Redeploy.
+
+| Variable | Affichage |
+| --- | --- |
+| `LEGAL_FORM` | Forme juridique (Mentions légales) |
+| `LEGAL_COMPANY_NAME` | Raison sociale |
+| `LEGAL_RC` | RC |
+| `LEGAL_ICE` | ICE |
+| `LEGAL_IF` | IF |
+| `LEGAL_ADDRESS` | Siège / adresse légale |
+| `LEGAL_PUBLICATION_DIRECTOR` | Responsable de la publication |
+| `BUSINESS_OPENING_HOURS` | Horaires (Contact, À propos), ex. `du lundi au samedi, de 9h à 19h` |
+| `BUSINESS_REFUND_DELAY` | Délai de remboursement (CGV, Livraison & retours), ex. `5 jours ouvrés` |
+
+Tant qu'une variable est vide, la page indique « En attente » (mentions légales) ou
+n'annonce aucun horaire / délai précis.
+
+## 9. Commandes de démonstration
+
+Une commande passée avec une adresse réservée aux tests (`@example.…`, `.invalid`,
+`.test`, `@demo.ma`) affiche, pour le super-admin, le bouton **Annuler la commande
+de démonstration** : la commande passe à « Annulée », l'historique est conservé,
+le stock n'est pas modifié et aucun email n'est envoyé. Pour une commande de test
+passée par le vrai tunnel d'achat (stock réellement décrémenté), utilisez plutôt
+l'annulation normale, qui remet le stock en place.
+
+## 10. Vérifier que tout va bien
 
 - **Système & santé** : base de données, configuration email, journaux d'emails.
 - Santé publique : `https://para-beauregard.vercel.app/api/health` doit afficher
@@ -129,7 +159,7 @@ Paiement accepté : **à la livraison (espèces)** uniquement.
   « Production database and storage backup » (chaque nuit) doivent être verts.
   GitHub envoie un email en cas d'échec.
 
-## 9. À ne pas faire
+## 11. À ne pas faire
 
 - Ne pas supprimer de produits ou de commandes réels : archiver ou annuler.
 - Ne pas modifier la base de données à la main.

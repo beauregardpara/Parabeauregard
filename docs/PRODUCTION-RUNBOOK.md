@@ -120,6 +120,25 @@ npm run admin:reset-password -- --email <email-admin>
 Puis se connecter et changer le mot de passe. Désactiver tout compte inutilisé dans
 Administration → Utilisateurs.
 
+## Rotation d'un secret exposé
+
+Règle : créer la nouvelle valeur, mettre à jour **tous** les consommateurs, vérifier,
+puis seulement révoquer l'ancienne. Les valeurs se saisissent directement dans les
+consoles (jamais dans un chat, un ticket ou le dépôt).
+
+| Secret | Où le régénérer | Consommateurs à mettre à jour | Vérification |
+| --- | --- | --- | --- |
+| Mot de passe base (DATABASE_URL, DIRECT_URL, SUPABASE_DB_URL) | Supabase → Project Settings → Database → Reset database password | Vercel : `DATABASE_URL`, `DIRECT_URL` · GitHub Secret : `SUPABASE_DB_URL` · poste local : `.env.local` | Redeploy, `/api/health` (database ok), relancer la sauvegarde |
+| `SUPABASE_SECRET_KEY` | Supabase → Project Settings → API Keys → créer une nouvelle clé secrète | Vercel · GitHub Secret · `.env.local` | Envoi d'une image en admin, relancer la sauvegarde, puis supprimer l'ancienne clé |
+| `RESEND_API_KEY` | Resend → API Keys → Create | Vercel uniquement | Redeploy, email de test, puis supprimer l'ancienne clé |
+| `FIRECRAWL_API_KEY` | Firecrawl → API Keys | Vercel · poste local : `.env` | Redeploy ; pas d'appel Firecrawl nécessaire |
+| `SESSION_SECRET` | Générer 64 caractères aléatoires (`openssl rand -hex 32`) | Vercel uniquement | Redeploy : toutes les sessions et liens de réinitialisation en cours sont invalidés (reconnexion requise) |
+| Mot de passe admin | Administration → Utilisateurs / `npm run admin:reset-password` | — | Connexion admin |
+| Jeton GitHub / Vercel personnel | GitHub → Settings → Developer settings ; Vercel → Account → Tokens | Aucun consommateur automatique (le déploiement passe par l'intégration Git) | Révoquer directement |
+
+Après chaque rotation : Deployments → Redeploy (les variables ne s'appliquent qu'aux
+nouveaux déploiements), puis contrôler `/api/health` et le workflow de sauvegarde.
+
 ## Après un incident
 
 Noter : heure de début et de fin, impact, cause, commit ou déploiement concerné,

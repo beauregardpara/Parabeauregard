@@ -33,12 +33,20 @@ npm run dev          # http://localhost:3000
 
 ## 🔑 Comptes de démonstration
 
-| Rôle | Email | Mot de passe |
+`npm run db:seed` (base locale ou de CI uniquement — refusé sur une base hébergée) crée des comptes
+sur le domaine réservé `demo.invalid`. Aucun mot de passe n'est stocké dans le dépôt : chaque compte
+lit le sien dans une variable d'environnement (12 caractères minimum), sinon un mot de passe aléatoire
+non affiché est généré.
+
+| Rôle | Email | Variable du mot de passe |
 |---|---|---|
-| Super Admin | `admin@parabeauregard.ma` | `admin123` |
-| Gestionnaire catalogue | `gestionnaire@parabeauregard.ma` | `gestion123` |
-| Service commandes | `commandes@parabeauregard.ma` | `commandes123` |
-| Client | `client@demo.ma` | `client123` |
+| Super Admin | `admin@demo.invalid` | `SEED_ADMIN_PASSWORD` |
+| Gestionnaire catalogue | `catalogue@demo.invalid` | `SEED_CATALOG_PASSWORD` |
+| Service commandes | `commandes@demo.invalid` | `SEED_ORDERS_PASSWORD` |
+| Client | `client@demo.invalid` | `SEED_CUSTOMER_PASSWORD` |
+
+En production, créez les administrateurs depuis Administration → Utilisateurs ou avec
+`npm run admin:reset-password`.
 
 Coupons : `BIENVENUE10` (-10 %), `SOLAIRE20` (-20 % solaire), `MOINS29` (-29 DH).
 

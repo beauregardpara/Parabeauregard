@@ -7,8 +7,6 @@ import { loginAdmin } from "@/lib/actions/admin";
 import { LockKeyhole } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 
-const SHOW_DEMO_CREDS = process.env.NODE_ENV !== "production";
-
 export default function AdminLoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -57,11 +55,6 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {SHOW_DEMO_CREDS && (
-            <p className="mt-5 rounded-xl bg-mint/70 px-4 py-3 text-center text-[11px] leading-relaxed text-slate-500">
-              Compte de démonstration : <strong>admin@parabeauregard.ma</strong> / <strong>admin123</strong>
-            </p>
-          )}
           <Link href="/" className="mt-5 block text-center text-xs font-semibold text-para-700 hover:underline">← Retour à la boutique</Link>
           <p className="mt-3 text-center text-[10px] text-slate-400">Accès protégé · Ne partagez jamais vos identifiants.</p>
         </div>

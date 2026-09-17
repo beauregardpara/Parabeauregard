@@ -9,3 +9,10 @@ para-beauregard-mockup
 references
 .agents
 .claude
+
+# Secrets locaux : jamais envoyés avec un déploiement CLI
+.env
+.env.*
+!.env.example
+!.env.production.example
+.vercel

@@ -3,6 +3,7 @@ import { ContentPage } from "@/components/content-page";
 import { BUSINESS } from "@/config/business";
 import { RETURN_DAYS } from "@/lib/constants";
 import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
+import { getBusinessPolicies } from "@/config/legal";
 
 // Frais de livraison lus en base : la page reflète toujours le calcul du panier.
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "CGV" };
 
 export default async function CgvPage() {
+  const { refundDelay } = getBusinessPolicies();
   const [shippingFlat, freeShippingThreshold] = await Promise.all([
     getSettingNumber(SETTING_KEYS.shippingFlat),
     getSettingNumber(SETTING_KEYS.freeShippingThreshold),
@@ -51,8 +53,8 @@ export default async function CgvPage() {
       <h2>6. Droit de retour</h2>
       <p>
         Retour possible sous {RETURN_DAYS} jours pour tout produit non ouvert dans son emballage d'origine. Les produits
-        d'hygiène intime et compléments ouverts ne sont pas repris. Le remboursement intervient sous 5 jours
-        ouvrés après réception du retour.
+        d'hygiène intime et compléments ouverts ne sont pas repris. Le remboursement intervient
+        {refundDelay ? ` sous ${refundDelay}` : ""} après réception et vérification du retour.
       </p>
 
       <h2>7. Données personnelles</h2>

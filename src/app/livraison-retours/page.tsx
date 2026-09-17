@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ContentPage } from "@/components/content-page";
 import { RETURN_DAYS } from "@/lib/constants";
 import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
+import { getBusinessPolicies } from "@/config/legal";
 
 // Frais de livraison lus en base : la page reflète toujours le calcul du panier.
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function LivraisonPage() {
+  const { refundDelay } = getBusinessPolicies();
   const [shippingFlat, freeShippingThreshold] = await Promise.all([
     getSettingNumber(SETTING_KEYS.shippingFlat),
     getSettingNumber(SETTING_KEYS.freeShippingThreshold),
@@ -47,7 +49,8 @@ export default async function LivraisonPage() {
       <p>
         Conformément à nos CGV, les produits non ouverts et dans leur emballage d'origine peuvent être
         retournés dans un délai de <strong>{RETURN_DAYS} jours</strong> après réception. Contactez-nous d'abord via la
-        page contact ; le remboursement est effectué sous 5 jours ouvrés après réception du retour.
+        page contact ; le remboursement est effectué{refundDelay ? ` sous ${refundDelay}` : ""} après
+        réception et vérification du retour.
         Pour raisons d'hygiène, certains produits (compléments ouverts, produits intimes) ne sont pas repris.
       </p>
 

@@ -55,6 +55,9 @@ jobs:
       DATABASE_URL: postgresql://para@localhost:5432/para?schema=public
       SESSION_SECRET: ${{ secrets.GITHUB_TOKEN }}
       NODE_ENV: test
+      # Comptes de la base jetable de CI uniquement (jamais utilisés ailleurs).
+      SEED_ADMIN_PASSWORD: ci-only-${{ github.run_id }}-superadmin
+      SEED_CATALOG_PASSWORD: ci-only-${{ github.run_id }}-catalogue
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { ContentPage } from "@/components/content-page";
+import { getBusinessPolicies } from "@/config/legal";
 
 export const metadata: Metadata = {
   title: "À propos",
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default function AProposPage() {
+  const { openingHours } = getBusinessPolicies();
   return (
     <ContentPage
       title="À propos de Para Beauregard"
@@ -44,7 +46,7 @@ export default function AProposPage() {
       </p>
       <h2>Une question ?</h2>
       <p>
-        Notre équipe répond du lundi au samedi, de 9h à 19h. Écrivez-nous via la page{" "}
+        Notre équipe vous répond{openingHours ? ` ${openingHours}` : " par téléphone, WhatsApp ou email"}. Écrivez-nous via la page{" "}
         <Link href="/contact">contact</Link> ou essayez notre assistant intelligent en bas à droite de votre écran.
       </p>
     </ContentPage>

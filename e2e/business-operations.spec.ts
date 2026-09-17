@@ -1,8 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// Comptes administrateurs synthétiques créés par prisma/seed.ts dans la base de CI.
-const SEED_SUPER_ADMIN = { email: "admin@parabeauregard.ma", password: "admin123" };
-const SEED_CATALOG_MANAGER = { email: "gestionnaire@parabeauregard.ma", password: "gestion123" };
+// Comptes synthétiques créés par prisma/seed.ts dans la base jetable de CI ; les
+// mots de passe viennent des variables SEED_*_PASSWORD définies par le workflow.
+const SEED_SUPER_ADMIN = { email: "admin@demo.invalid", password: process.env.SEED_ADMIN_PASSWORD ?? "" };
+const SEED_CATALOG_MANAGER = { email: "catalogue@demo.invalid", password: process.env.SEED_CATALOG_PASSWORD ?? "" };
 
 async function adminLogin(page: Page, account: { email: string; password: string }) {
   await page.goto("/admin/login");
@@ -53,6 +54,7 @@ test.describe("Exploitation quotidienne", () => {
   });
 
   test("le super-admin retrouve une commande par sa référence", async ({ page }) => {
+    test.skip(!SEED_SUPER_ADMIN.password, "SEED_ADMIN_PASSWORD non défini");
     await adminLogin(page, SEED_SUPER_ADMIN);
     await expect(page.getByText("Commandes aujourd'hui")).toBeVisible();
     await page.goto("/admin/commandes");
@@ -65,6 +67,7 @@ test.describe("Exploitation quotidienne", () => {
   });
 
   test("un gestionnaire catalogue n'accède pas aux clients", async ({ page }) => {
+    test.skip(!SEED_CATALOG_MANAGER.password, "SEED_CATALOG_PASSWORD non défini");
     await adminLogin(page, SEED_CATALOG_MANAGER);
     await page.goto("/admin/clients");
     await expect(page).toHaveURL(/\/admin\/produits/);

@@ -37,7 +37,7 @@ export default function ContactPage() {
       <p>
         Pour une réponse rapide, écrivez-nous sur{" "}
         <Link
-          href={whatsappLink("Bonjour, j'aimerais poser une question à Para Beauregard.")}
+          href={whatsappLink("Bonjour Para Beauregard, je souhaite avoir des informations concernant ")}
           target="_blank"
           rel="noopener noreferrer"
           className="font-semibold text-para-700 underline"

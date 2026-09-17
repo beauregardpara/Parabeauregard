@@ -3,8 +3,10 @@ import { formatDate } from "@/lib/format";
 import { moderateReview, toggleVerifiedReview } from "@/lib/actions/admin";
 import { StatusPill } from "@/components/status-pill";
 import { PageHeader } from "@/components/admin-shell";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 export default async function AdminReviewsPage() {
+  await requireAdminPagePermission("reviews:read");
   const reviews = await db.review.findMany({
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     include: { product: { select: { name: true, slug: true } } },

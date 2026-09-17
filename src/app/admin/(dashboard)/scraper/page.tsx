@@ -5,8 +5,10 @@ import { formatDate } from "@/lib/format";
 import { saveScraperSettings } from "@/lib/actions/admin";
 import { ScrapeLauncher } from "@/components/admin-scrape-launcher";
 import { PageHeader } from "@/components/admin-shell";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 export default async function AdminScraperPage() {
+  await requireAdminPagePermission("scraper:read");
   const [runs, frequency, autoPublish] = await Promise.all([
     db.scrapeRun.findMany({ orderBy: { startedAt: "desc" }, take: 30 }),
     getSetting("scrape_frequency_hours"),

@@ -2,18 +2,30 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatDate, formatPrice } from "@/lib/format";
 import { PageHeader } from "@/components/admin-shell";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 export default async function AdminCustomersPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
+  await requireAdminPagePermission("customers:read");
   const sp = await searchParams;
   const PAGE_SIZE = 30;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
 
-  const where = sp.q
-    ? { OR: [{ email: { contains: sp.q } }, { firstName: { contains: sp.q } }, { lastName: { contains: sp.q } }] }
+  // Variantes de casse : PostgreSQL compare les LIKE en respectant la casse.
+  const q = sp.q?.trim() ?? "";
+  const variants = [...new Set([q, q.toLowerCase(), q.charAt(0).toUpperCase() + q.slice(1).toLowerCase(), q.toUpperCase()])].filter(Boolean);
+  const where = q
+    ? {
+        OR: variants.flatMap((v) => [
+          { email: { contains: v } },
+          { firstName: { contains: v } },
+          { lastName: { contains: v } },
+          { phone: { contains: v } },
+        ]),
+      }
     : {};
 
   const [customers, total] = await Promise.all([

@@ -2,8 +2,10 @@ import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { createAdminUser, toggleAdminActive, changeAdminRole } from "@/lib/actions/admin";
 import { PageHeader } from "@/components/admin-shell";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 export default async function AdminUsersPage() {
+  await requireAdminPagePermission("users:read");
   const users = await db.adminUser.findMany({ orderBy: { createdAt: "asc" } });
 
   const inputCls =

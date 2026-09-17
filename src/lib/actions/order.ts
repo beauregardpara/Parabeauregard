@@ -8,7 +8,7 @@ import { getSettingNumber, getDeliveryCities, cityShippingFee, SETTING_KEYS, typ
 import { roundMoney } from "@/lib/format";
 import { checkoutSchema } from "@/lib/validation/schemas";
 import { checkRateLimit, RATE_LIMITS, getServerActionIp } from "@/lib/security/rate-limit";
-import { sendTransactionalEmail } from "@/lib/email";
+import { businessNotificationEmail, sendTransactionalEmail } from "@/lib/email";
 
 export type CheckoutInput = {
   fullName: string;
@@ -288,6 +288,29 @@ export async function createOrder(input: CheckoutInput): Promise<CheckoutResult>
         reference: order.reference,
         token: order.confirmationToken ?? "",
         total: order.total.toFixed(2),
+      },
+    });
+
+    // Notification interne : la parapharmacie est prévenue de chaque commande
+    // (jamais bloquant, le résultat est journalisé dans EmailLog).
+    await sendTransactionalEmail({
+      to: businessNotificationEmail(),
+      template: "new-order-admin",
+      replyTo: order.email || undefined,
+      data: {
+        orderId: order.id,
+        reference: order.reference,
+        fullName: order.fullName,
+        phone: order.phone,
+        email: order.email,
+        address: order.addressStreet,
+        city: order.addressCity,
+        itemsText: lines.map((l) => `${l.productName} × ${l.quantity} — ${roundMoney(l.unitPrice * l.quantity).toFixed(2)} DH`).join("\n"),
+        subtotal: order.subtotal.toFixed(2),
+        shipping: order.shippingCost.toFixed(2),
+        discount: order.discount.toFixed(2),
+        total: order.total.toFixed(2),
+        notes: order.notes,
       },
     });
 

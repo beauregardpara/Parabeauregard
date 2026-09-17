@@ -1,20 +1,31 @@
 import type { Metadata } from "next";
 import { ContentPage } from "@/components/content-page";
+import { BUSINESS } from "@/config/business";
+import { RETURN_DAYS } from "@/lib/constants";
+import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
+
+// Frais de livraison lus en base : la page reflète toujours le calcul du panier.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "CGV" };
 
-export default function CgvPage() {
+export default async function CgvPage() {
+  const [shippingFlat, freeShippingThreshold] = await Promise.all([
+    getSettingNumber(SETTING_KEYS.shippingFlat),
+    getSettingNumber(SETTING_KEYS.freeShippingThreshold),
+  ]);
   return (
     <ContentPage title="Conditions Générales de Vente">
       <h2>1. Objet</h2>
       <p>
-        Les présentes CGV régissent les ventes de produits réalisées sur parabeauregard.ma par Para
-        Beauregard SARL au profit de consommateurs résidant au Maroc.
+        Les présentes CGV régissent les ventes de produits réalisées sur le site Para Beauregard par{" "}
+        {BUSINESS.name} ({BUSINESS.locationLabel}) au profit de consommateurs résidant au Maroc.
       </p>
 
       <h2>2. Commandes</h2>
       <p>
-        Toute commande vaut acceptation des présentes CGV. La commande est confirmée par email. Nous nous
+        Toute commande vaut acceptation des présentes CGV. La commande est confirmée à l'écran par sa
+        référence, puis par email lorsqu'une adresse est fournie. Nous nous
         réservons le droit d'annuler toute commande en cas d'indisponibilité avérée du produit ou d'erreur
         manifeste de prix.
       </p>
@@ -22,7 +33,8 @@ export default function CgvPage() {
       <h2>3. Prix</h2>
       <p>
         Les prix sont indiqués en dirhams marocains (MAD), toutes taxes comprises, hors frais de livraison
-        (29 DH ; offerts dès 500 DH d'achat).
+        ({shippingFlat > 0 ? `${shippingFlat} DH` : "offerts"}
+        {shippingFlat > 0 && freeShippingThreshold > 0 ? ` ; offerts dès ${freeShippingThreshold} DH d'achat` : ""}).
       </p>
 
       <h2>4. Paiement</h2>
@@ -38,7 +50,7 @@ export default function CgvPage() {
 
       <h2>6. Droit de retour</h2>
       <p>
-        Retour possible sous 7 jours pour tout produit non ouvert dans son emballage d'origine. Les produits
+        Retour possible sous {RETURN_DAYS} jours pour tout produit non ouvert dans son emballage d'origine. Les produits
         d'hygiène intime et compléments ouverts ne sont pas repris. Le remboursement intervient sous 5 jours
         ouvrés après réception du retour.
       </p>

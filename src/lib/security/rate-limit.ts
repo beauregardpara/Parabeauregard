@@ -67,13 +67,32 @@ export function checkRateLimit(
  * Des headers tiers ne sont pris en compte que si TRUSTED_PROXY est défini,
  * pour éviter le spoofing de X-Forwarded-For.
  */
-export function getClientIp(request: Request): string {
-  if (process.env.TRUSTED_PROXY === "true") {
-    const xff = request.headers.get("x-forwarded-for");
-    if (xff) return xff.split(",")[0].trim();
-    const realIp = request.headers.get("x-real-ip");
-    if (realIp) return realIp.trim();
+/**
+ * Sur Vercel, le proxy de la plateforme réécrit lui-même les en-têtes d'IP :
+ * ils sont fiables sans configuration. Ailleurs, TRUSTED_PROXY=true est requis.
+ */
+function proxyHeadersTrusted(): boolean {
+  return process.env.TRUSTED_PROXY === "true" || process.env.VERCEL === "1";
+}
+
+/** IP client depuis des en-têtes émis par un proxy de confiance. */
+export function ipFromTrustedHeaders(get: (name: string) => string | null | undefined): string | null {
+  if (!proxyHeadersTrusted()) return null;
+  const candidates = [
+    process.env.VERCEL === "1" ? get("x-vercel-forwarded-for") : null,
+    get("x-forwarded-for"),
+    get("x-real-ip"),
+  ];
+  for (const value of candidates) {
+    const ip = value?.split(",")[0]?.trim();
+    if (ip) return ip;
   }
+  return null;
+}
+
+export function getClientIp(request: Request): string {
+  const trusted = ipFromTrustedHeaders((name) => request.headers.get(name));
+  if (trusted) return trusted;
   // Sinon, essayer l'IP directe (présente dans certains runtimes)
   try {
     const ip = (request as { ip?: string }).ip;
@@ -91,12 +110,8 @@ export async function getServerActionIp(): Promise<string> {
   try {
     const { headers } = await import("next/headers");
     const h = await headers();
-    if (process.env.TRUSTED_PROXY === "true") {
-      const xff = h.get("x-forwarded-for");
-      if (xff) return xff.split(",")[0].trim();
-      const realIp = h.get("x-real-ip");
-      if (realIp) return realIp.trim();
-    }
+    const trusted = ipFromTrustedHeaders((name) => h.get(name));
+    if (trusted) return trusted;
     // Sans proxy de confiance, on refuse d'interpréter X-Forwarded-For
     // (risque de spoofing) : on retombe sur une clé globale.
     return "server-action";
@@ -112,6 +127,7 @@ export const RATE_LIMITS = {
   search: { maxRequests: 30, windowSeconds: 60, keyPrefix: "search" },
   login: { maxRequests: 5, windowSeconds: 300, keyPrefix: "login" },
   register: { maxRequests: 3, windowSeconds: 300, keyPrefix: "register" },
+  passwordReset: { maxRequests: 5, windowSeconds: 900, keyPrefix: "password-reset" },
   checkout: { maxRequests: 5, windowSeconds: 300, keyPrefix: "checkout" },
   contact: { maxRequests: 3, windowSeconds: 300, keyPrefix: "contact" },
   reputation: { maxRequests: 10, windowSeconds: 3600, keyPrefix: "reputation" },

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { renderEmail } from "./templates";
+import { BUSINESS } from "@/config/business";
 
 /**
  * Abstraction d'envoi d'emails.
@@ -46,7 +47,7 @@ function resolveProvider(): Provider {
   return { kind: "none" };
 }
 
-async function deliver(provider: Provider, to: string, subject: string, html: string): Promise<void> {
+async function deliver(provider: Provider, to: string, subject: string, html: string, replyTo?: string): Promise<void> {
   if (provider.kind === "resend") {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -54,7 +55,7 @@ async function deliver(provider: Provider, to: string, subject: string, html: st
         Authorization: `Bearer ${provider.apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from: provider.from, to: [to], subject, html }),
+      body: JSON.stringify({ from: provider.from, to: [to], subject, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
     });
     if (!res.ok) throw new Error(`Resend ${res.status}`);
     return;
@@ -70,6 +71,7 @@ async function deliver(provider: Provider, to: string, subject: string, html: st
       to,
       subject,
       html,
+      ...(replyTo ? { "h:Reply-To": replyTo } : {}),
     });
     const res = await fetch(`https://api.mailgun.net/v3/${encodeURIComponent(provider.domain)}/messages`, {
       method: "POST",
@@ -95,6 +97,7 @@ async function deliver(provider: Provider, to: string, subject: string, html: st
       body: JSON.stringify({
         personalizations: [{ to: [{ email: to }] }],
         from: { email: provider.from },
+        ...(replyTo ? { reply_to: { email: replyTo } } : {}),
         subject,
         content: [{ type: "text/html", value: html }],
       }),
@@ -113,7 +116,10 @@ export type EmailTemplate =
   | "order-status"
   | "return-requested"
   | "return-updated"
-  | "stock-alert";
+  | "stock-alert"
+  | "new-order-admin"
+  | "contact-admin"
+  | "password-reset";
 
 export type EmailData = Record<string, string | number | boolean | null | undefined>;
 
@@ -121,8 +127,11 @@ export async function sendTransactionalEmail(params: {
   to: string;
   template: EmailTemplate;
   data: EmailData;
+  /** Adresse de réponse (ex. le client pour une notification interne). */
+  replyTo?: string;
 }): Promise<"sent" | "skipped" | "failed"> {
   const { to, template, data } = params;
+  const replyTo = params.replyTo && params.replyTo.includes("@") ? params.replyTo : undefined;
   if (!to || !to.includes("@")) return "skipped";
 
   const provider = resolveProvider();
@@ -135,7 +144,7 @@ export async function sendTransactionalEmail(params: {
 
   const { subject, html } = renderEmail(template, data);
   try {
-    await deliver(provider, to, subject, html);
+    await deliver(provider, to, subject, html, replyTo);
     await db.emailLog.create({ data: { to, subject, template, status: "SENT" } }).catch(() => undefined);
     return "sent";
   } catch (err) {
@@ -167,6 +176,12 @@ function subjectFor(template: EmailTemplate): string {
       return "Réponse à votre demande de retour";
     case "stock-alert":
       return "Produit de nouveau disponible";
+    case "new-order-admin":
+      return "Nouvelle commande";
+    case "contact-admin":
+      return "Nouveau message de contact";
+    case "password-reset":
+      return "Réinitialisation de votre mot de passe";
   }
 }
 
@@ -174,4 +189,14 @@ function subjectFor(template: EmailTemplate): string {
 export function emailProviderStatus(): { configured: boolean; kind: string } {
   const p = resolveProvider();
   return { configured: p.kind !== "none", kind: p.kind };
+}
+
+/**
+ * Destinataire des notifications internes (nouvelles commandes, messages de
+ * contact). Surchargable par BUSINESS_NOTIFICATION_EMAIL, sinon l'email public
+ * de la parapharmacie.
+ */
+export function businessNotificationEmail(): string {
+  const configured = process.env.BUSINESS_NOTIFICATION_EMAIL?.trim();
+  return configured && configured.includes("@") ? configured : BUSINESS.email;
 }

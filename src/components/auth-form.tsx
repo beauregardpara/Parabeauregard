@@ -82,7 +82,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </button>
         </form>
 
-        {mode === "login" && <p className="mt-4 text-center text-xs font-semibold text-para-700">Mot de passe oublié ?</p>}
+        {mode === "login" && (
+          <p className="mt-4 text-center text-xs font-semibold">
+            <Link href="/mot-de-passe/oublie" className="text-para-700 hover:underline">Mot de passe oublié ?</Link>
+          </p>
+        )}
         <p className="mt-5 text-center text-sm text-slate-500">
           {mode === "login" ? (
             <>Pas encore de compte ?{" "}

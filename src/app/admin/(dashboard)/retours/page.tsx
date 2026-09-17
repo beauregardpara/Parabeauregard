@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/admin-shell";
 import { StatusPill } from "@/components/status-pill";
 import { decideReturn } from "@/lib/actions/returns";
 import { Undo2 } from "lucide-react";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "En attente",
@@ -19,6 +20,7 @@ export default async function AdminReturnsPage({
 }: {
   searchParams: Promise<{ statut?: string }>;
 }) {
+  await requireAdminPagePermission("orders:read");
   const { statut } = await searchParams;
   const statusFilter = statut && ["PENDING", "APPROVED", "REJECTED"].includes(statut) ? statut : undefined;
 

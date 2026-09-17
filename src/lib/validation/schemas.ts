@@ -12,6 +12,12 @@ export const phoneSchema = z.string().max(20).optional();
 export const contactSchema = z.object({
   name: z.string().min(1, "Votre nom est requis.").max(200),
   email: emailSchema,
+  phone: z
+    .string()
+    .max(30)
+    .regex(/^[+\d\s().-]*$/, "Numéro de téléphone invalide.")
+    .optional()
+    .default(""),
   subject: z.string().min(1, "Le sujet est requis.").max(200),
   message: z.string().min(10, "Votre message doit contenir au moins 10 caractères.").max(5000),
 });

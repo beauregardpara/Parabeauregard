@@ -134,3 +134,60 @@ export async function getAverageBasket() {
   const count = agg._count;
   return count > 0 ? roundMoney((agg._sum.total ?? 0) / count) : 0;
 }
+// ── Pilotage quotidien ─────────────────────────────────────────────
+
+const BUSINESS_TIME_ZONE = "Africa/Casablanca";
+
+/** Minuit (heure de Casablanca) du jour de `now`, exprimé comme instant absolu. */
+export function startOfBusinessDay(now: Date = new Date()): Date {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: BUSINESS_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  // Décalage réel de Casablanca à cet instant (gère les changements d'heure).
+  const localAsUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+  const offsetMs = localAsUtc - Math.floor(now.getTime() / 1000) * 1000;
+  return new Date(Date.UTC(get("year"), get("month") - 1, get("day")) - offsetMs);
+}
+
+export type OperationsSnapshot = {
+  ordersToday: number;
+  revenueToday: number;
+  revenue7d: number;
+  revenue30d: number;
+  toProcess: number;
+  lowStock: number;
+};
+
+/** Indicateurs du jour, calculés uniquement à partir des données réelles. */
+export async function getOperationsSnapshot(lowStockThreshold: number, now: Date = new Date()): Promise<OperationsSnapshot> {
+  const today = startOfBusinessDay(now);
+  const since7 = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000);
+  const since30 = new Date(today.getTime() - 29 * 24 * 60 * 60 * 1000);
+  const notCancelled = { status: { not: "CANCELLED" as const } };
+  const [ordersToday, revenueToday, revenue7d, revenue30d, toProcess, lowStock] = await Promise.all([
+    db.order.count({ where: { ...notCancelled, createdAt: { gte: today } } }),
+    db.order.aggregate({ _sum: { total: true }, where: { ...notCancelled, createdAt: { gte: today } } }),
+    db.order.aggregate({ _sum: { total: true }, where: { ...notCancelled, createdAt: { gte: since7 } } }),
+    db.order.aggregate({ _sum: { total: true }, where: { ...notCancelled, createdAt: { gte: since30 } } }),
+    db.order.count({ where: { status: { in: ["NEW", "PREPARING"] } } }),
+    db.product.count({
+      where: { status: "PUBLISHED", unlimitedStock: false, stock: { gt: 0, lte: Math.max(0, lowStockThreshold) } },
+    }),
+  ]);
+  return {
+    ordersToday,
+    revenueToday: roundMoney(revenueToday._sum.total ?? 0),
+    revenue7d: roundMoney(revenue7d._sum.total ?? 0),
+    revenue30d: roundMoney(revenue30d._sum.total ?? 0),
+    toProcess,
+    lowStock,
+  };
+}

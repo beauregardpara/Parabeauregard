@@ -1,0 +1,70 @@
+name: Production health check
+
+# Surveillance légère de la production : toutes les 3 heures (et à la demande).
+# Un échec envoie la notification GitHub habituelle au propriétaire du dépôt.
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-health
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Valeurs publiques, surchargeables par des « variables » GitHub (pas de secret ici).
+      HEALTH_URL: ${{ vars.PRODUCTION_HEALTH_URL || 'https://para-beauregard.vercel.app/api/health' }}
+      MIN_PRODUCTS: ${{ vars.PRODUCTION_MIN_PRODUCTS || '550' }}
+      EXPECTED_VERSION: ${{ vars.PRODUCTION_EXPECTED_VERSION || '' }}
+    steps:
+      - name: Check /api/health
+        shell: bash
+        run: |
+          set -uo pipefail
+          code=000
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o health.json -w '%{http_code}' --max-time 30 "$HEALTH_URL" || echo 000)
+            if [ "$code" = "200" ]; then break; fi
+            echo "Attempt $attempt: HTTP $code"
+            sleep 20
+          done
+          if [ "$code" != "200" ]; then
+            echo "::error::Health endpoint returned HTTP $code"
+            exit 1
+          fi
+          node <<'NODE'
+          const fs = require("fs");
+          const h = JSON.parse(fs.readFileSync("health.json", "utf8"));
+          const min = Number(process.env.MIN_PRODUCTS || 0);
+          const expectedVersion = process.env.EXPECTED_VERSION || "";
+          const products = h.counts && typeof h.counts.products === "number" ? h.counts.products : -1;
+          const problems = [];
+          if (h.status !== "ok" || h.database !== "ok") problems.push(`database=${h.database} status=${h.status}`);
+          if (products < min) problems.push(`published products ${products} < ${min}`);
+          if (expectedVersion && h.version !== expectedVersion) problems.push(`version ${h.version} != ${expectedVersion}`);
+          const summary = [
+            "## Production health",
+            "",
+            `| Check | Value |`,
+            `| --- | --- |`,
+            `| Status | ${h.status} |`,
+            `| Database | ${h.database} (${h.dbLatencyMs} ms) |`,
+            `| Published products | ${products} (min ${min}) |`,
+            `| Version | ${h.version} |`,
+            "",
+            problems.length ? `**Problems:** ${problems.join("; ")}` : "All checks passed.",
+          ].join("\n");
+          if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + "\n");
+          console.log(summary);
+          if (problems.length) {
+            for (const p of problems) console.log(`::error::${p}`);
+            process.exit(1);
+          }
+          NODE

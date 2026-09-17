@@ -2,8 +2,10 @@ import { db } from "@/lib/db";
 import { formatDate, formatPrice } from "@/lib/format";
 import { saveCoupon, toggleCoupon } from "@/lib/actions/admin";
 import { PageHeader } from "@/components/admin-shell";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 export default async function AdminCouponsPage() {
+  await requireAdminPagePermission("coupons:read");
   const coupons = await db.coupon.findMany({ orderBy: { createdAt: "desc" } });
   const inputCls =
     "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-para-400";

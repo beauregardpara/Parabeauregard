@@ -2,6 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/admin-shell";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 const ENTITY_FILTERS = [
   { value: "Product", label: "Produits" },
@@ -19,6 +20,7 @@ export default async function AdminJournalPage({
 }: {
   searchParams: Promise<{ entite?: string }>;
 }) {
+  await requireAdminPagePermission("logs:read");
   const { entite } = await searchParams;
   const entity = entite && ENTITY_FILTERS.some((f) => f.value === entite) ? entite : undefined;
 

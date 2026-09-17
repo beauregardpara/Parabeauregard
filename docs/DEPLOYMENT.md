@@ -1,74 +1,64 @@
-# DEPLOYMENT — V2.1 (THIQTI.MA)
+# Déploiement — Para Beauregard
 
-Guide de déploiement production. Retient exactement ce qui est testé dans la CI.
+## Flux standard
 
-## 1. Builds requis (gates)
+```
+branche → pull request → CI verte → merge sur main → déploiement Vercel automatique
+```
+
+- Dépôt GitHub privé `medvoyage888-lgtm/para-beauregard`, relié au projet Vercel
+  existant `para-beauregard` : tout commit sur `main` part en production.
+- Ne jamais pousser directement sur `main` ; ne jamais créer un second projet Vercel.
+- Vérifications après déploiement : `/api/health` (status, database, version,
+  `counts.products`), une fiche produit, le panier, le checkout, l'administration.
+- Versions : `APP_VERSION` (variable Vercel) doit correspondre au tag livré.
+  Correctifs → `v1.0.x`, évolutions → `v1.x.0`. Les tags ne sont jamais réécrits.
+
+## Contrôles CI (`.github/workflows/ci.yml`)
+
+| Job | Contenu |
+| --- | --- |
+| qa | ESLint, TypeScript, tests unitaires (Vitest), build |
+| e2e | PostgreSQL 16 + catalogue synthétique, Playwright (bureau, mobile, accessibilité) |
+| docker | Image standalone + smoke test (santé, pages clés) |
+
+Commandes locales équivalentes :
+
 ```bash
-npm ci                        # install propre (lockfile)
-npm run lint                  # 0 error (perte tolérable : warnings documentés)
-npm run typecheck             # tsc --noEmit
-npm test                      # vitest : 76 tests, 6 fichiers
-npm run db:push               # crée le schéma (SQLite local / PG en prod)
-npm run build                 # prisma generate && next build (standalone)
-npm run test:e2e              # playwright : 24 tests (projets chromium + mobile-iphone)
+npm ci
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run test:e2e
 ```
 
-## 2. Sortie standalone (image Docker)
+## Variables d'environnement (Vercel)
 
-`next.config.ts` exporte `output: "standalone"`. Le Dockerfile (multi-étapes, user non-root)
-produit une image minimale :
+Noms seulement — les valeurs ne sont jamais copiées dans le dépôt.
 
-```dockerfile
-# via CI (npm * pas encore installé sur la machine de déploiement ? Sinon :)
-docker build -t thiqti-ma .
-docker run -d -p 3000:3000 \
-  -e DATABASE_URL="file:./data/prod.db" \
-  -e SESSION_SECRET="$(openssl rand -hex 32)" \
-  thiqti-ma
-```
+| Clé | Rôle |
+| --- | --- |
+| `DATABASE_URL`, `DIRECT_URL` | PostgreSQL Supabase (pool et connexion directe) |
+| `SESSION_SECRET` | Signature des sessions et des liens de réinitialisation |
+| `NEXT_PUBLIC_SITE_URL` | URL publique (canonical, sitemap, emails) |
+| `APP_VERSION` | Version affichée par `/api/health` |
+| `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_PRODUCT_IMAGES_BUCKET` | Images produits (clé serveur uniquement) |
+| `RESEND_API_KEY`, `RESEND_FROM` | Emails transactionnels |
+| `BUSINESS_NOTIFICATION_EMAIL` | Facultatif : destinataire des notifications internes (défaut : email public) |
+| `FIRECRAWL_API_KEY`, `REPUTATION_*` | Scraper et réputation (appels payants) |
+| `TRUSTED_PROXY` | Facultatif hors Vercel ; sur Vercel les en-têtes d'IP sont fiables d'office |
 
-- **Healthcheck** : `GET /api/health` → 200 (DB OK) / 503 (DB KO), version incluse.
-- **DB SQLite** : le dossier `/app/data` du conteneur est pré-créé et inscriptible par
-  l'utilisateur non-root `nextjs` (le smoke test CI s'appuie dessus).
-- **Volumes** : monter un volume sur `/app/data` pour persister SQLite.
+Sur Vercel, le limiteur de débit utilise l'IP transmise par la plateforme
+(`x-vercel-forwarded-for`) : chaque visiteur a sa propre limite.
 
-## 3. Variables d'environnement (voir `.env.example`)
+## Surveillance et sauvegardes
 
-| Clé | Obligatoire | Rôle |
-|---|---|---|
-| `DATABASE_URL` | oui | `file:…` (SQLite) ou `postgresql://…` (prod) |
-| `SESSION_SECRET` | oui | signature HMAC des sessions (32+ octets aléatoires) |
-| `NEXT_PUBLIC_SITE_URL` | oui | métadonnées/canonical/sitemap/robots |
-| `ANTHROPIC_API_KEY` | non | assistant IA Claude (sinon fallback local) |
-| `TRUSTED_PROXY` | non | `true` uniquement derrière un reverse proxy fiable |
-| `LOG_LEVEL` | non | `debug`/`info`/`warn`/`error` (défaut `info`) |
-| `ALLOW_SEED_IN_PROD` | non | autorise explicitement `db:seed` en `NODE_ENV=production` |
-| `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_DSN` | non | monitoring (intégration optionnelle dans le logger) |
-| `APP_VERSION` | non | surcharge la version affichée par `/api/health` |
+- `production-health.yml` : contrôle `/api/health` toutes les 3 heures (variables
+  GitHub facultatives `PRODUCTION_HEALTH_URL`, `PRODUCTION_MIN_PRODUCTS`,
+  `PRODUCTION_EXPECTED_VERSION`).
+- `database-backup.yml` : sauvegarde base + stockage chaque nuit, restauration testée
+  dans une base isolée, artefacts privés 14 jours.
 
-## 4. Mise en production recommandée
-
-1. **PostgreSQL** : voir `docs/POSTGRESQL.md` (Aïna de host à la base, run migrations `db:push`/`migrate`).
-2. **Reverse proxy** : Nginx/Traefik/CF en HTTPS ; définir `TRUSTED_PROXY=true` ET filtrer
-   `X-Forwarded-For` côté proxy (impératif pour le rate-limit par IP).
-3. **Images** : les 52 MB de `public/` peuvent être servis depuis un object storage
-   (allège l'image ~134→135 MB ; garder `images.unoptimized`).
-4. **Horodatage/scheduler scraping** : `npm run scrape:schedule` via cron/système (voir
-   `docs/SCRAPER.md`); l'admin peut déclencher manuellement via `/admin/scraper`.
-
-## 5. CI (`.github/workflows/ci.yml`)
-- **qa** : lint + typecheck + vitest + db:push + build (Node 22, timeout 25 min). Attiser
-  `node-version: 22` : sous **Node ≥ 23/24 le build webpack peut crasher** `WasmHash` —
-  corrigé côté app par `webpack.output.hashFunction = "sha256"` dans `next.config.ts`.
-- **e2e** : services Postgres 16, Playwright chromium + mobile (iPhone 12) + axe-core
-  (timeout 40 min).
-- **docker** : `docker/build-push-action@v6` + smoke test `GET /api/health`
-  (`DATABASE_URL="file:./data/ci.db"`, script dispos en fin de job).
-
-## 6. Notes d'exploitation
-- **Mode prod = SQLite interdit de seed** : `prisma/seed.ts` refuse `NODE_ENV=production`
-  sans `ALLOW_SEED_IN_PROD=true`.
-- Résilience : le scraper retries + robots.txt, le chat est rate-limité (10/min), les actions
-  admin auditées (`PrismaActivityLog`), journal en base de toutes les mutations.
-- Le build local est légèrement **différent de la CI** (Linux/Node 22 vs Windows/Node 24) — le
-  fix WASM-hash s'applique aux deux.
+Incidents et retours arrière : `docs/PRODUCTION-RUNBOOK.md`.
+Exploitation quotidienne : `docs/ADMIN-OPERATIONS.md`.

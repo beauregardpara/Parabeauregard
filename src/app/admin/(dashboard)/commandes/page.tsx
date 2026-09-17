@@ -4,14 +4,35 @@ import { formatDate, formatPrice } from "@/lib/format";
 import { updateOrderStatus } from "@/lib/actions/admin";
 import { StatusPill } from "@/components/status-pill";
 import { PageHeader } from "@/components/admin-shell";
+import { requireAdminPagePermission } from "@/lib/auth";
+import { VALID_ORDER_STATES } from "@/lib/order-status";
 
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ statut?: string; page?: string }>;
+  searchParams: Promise<{ statut?: string; page?: string; q?: string }>;
 }) {
+  await requireAdminPagePermission("orders:read");
   const sp = await searchParams;
-  const where = sp.statut ? { status: sp.statut as never } : {};
+  const status = (VALID_ORDER_STATES as readonly string[]).includes(sp.statut ?? "")
+    ? (sp.statut as (typeof VALID_ORDER_STATES)[number])
+    : undefined;
+  // Recherche par référence, téléphone, nom ou email (variantes de casse pour PostgreSQL).
+  const q = sp.q?.trim() ?? "";
+  const variants = [...new Set([q, q.toUpperCase(), q.toLowerCase(), q.charAt(0).toUpperCase() + q.slice(1).toLowerCase()])].filter(Boolean);
+  const where = {
+    ...(status ? { status } : {}),
+    ...(q
+      ? {
+          OR: variants.flatMap((v) => [
+            { reference: { contains: v } },
+            { phone: { contains: v } },
+            { fullName: { contains: v } },
+            { email: { contains: v } },
+          ]),
+        }
+      : {}),
+  };
 
   const PAGE_SIZE = 30;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
@@ -39,6 +60,19 @@ export default async function AdminOrdersPage({
   return (
     <>
       <PageHeader title="Commandes" subtitle="Suivez et faites évoluer le statut de chaque commande." />
+
+      <form className="mb-4 flex flex-wrap gap-2" role="search">
+        {status && <input type="hidden" name="statut" value={status} />}
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder="Référence, téléphone, nom ou email…"
+          aria-label="Rechercher une commande"
+          className="admin-input min-w-[240px] flex-1"
+        />
+        <button type="submit" className="btn-3d rounded-full bg-para-700 px-4 py-1.5 text-xs font-bold text-white">Rechercher</button>
+        {q && <Link href={status ? `/admin/commandes?statut=${status}` : "/admin/commandes"} className="self-center text-xs font-bold text-para-700 hover:underline">Effacer</Link>}
+      </form>
 
       <div className="mb-5 flex flex-wrap gap-2">
         {tabs.map(([val, label]) => (
@@ -110,14 +144,14 @@ export default async function AdminOrdersPage({
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-center gap-2">
           {page > 1 && (
-            <Link href={`/admin/commandes?statut=${sp.statut ?? ""}&page=${page - 1}`}
+            <Link href={`/admin/commandes?statut=${status ?? ""}&q=${encodeURIComponent(q)}&page=${page - 1}`}
               className="btn-3d rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-600 hover:bg-mint">
               ← Précédente
             </Link>
           )}
           <span className="text-xs font-bold text-slate-500">{page} / {totalPages}</span>
           {page < totalPages && (
-            <Link href={`/admin/commandes?statut=${sp.statut ?? ""}&page=${page + 1}`}
+            <Link href={`/admin/commandes?statut=${status ?? ""}&q=${encodeURIComponent(q)}&page=${page + 1}`}
               className="btn-3d rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-600 hover:bg-mint">
               Suivante →
             </Link>

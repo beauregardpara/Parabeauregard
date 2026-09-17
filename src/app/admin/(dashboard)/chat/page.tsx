@@ -2,8 +2,10 @@ import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/admin-shell";
 import { MessageCircle } from "lucide-react";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 export default async function AdminChatPage() {
+  await requireAdminPagePermission("chat:read");
   const sessions = await db.chatSession.findMany({
     orderBy: { startedAt: "desc" },
     take: 30,

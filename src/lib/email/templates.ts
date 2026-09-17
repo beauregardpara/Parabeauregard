@@ -94,6 +94,45 @@ export function renderEmail(template: EmailTemplate, data: EmailData): { subject
       ].join("");
       return { subject: `Retour ${ref} — ${decision}`, html: layout("Réponse concernant votre retour", body) };
     }
+    case "new-order-admin": {
+      const ref = String(data.reference ?? "");
+      const lines = String(data.itemsText ?? "")
+        .split("\n")
+        .filter(Boolean)
+        .map((line) => `<li>${esc(line)}</li>`)
+        .join("");
+      const body = [
+        p(`Nouvelle commande <strong>${esc(ref)}</strong> — paiement à la livraison.`),
+        p(`<strong>Client :</strong> ${esc(String(data.fullName ?? ""))} · ${esc(String(data.phone ?? ""))}${data.email ? ` · ${esc(String(data.email))}` : ""}`),
+        p(`<strong>Adresse :</strong> ${esc(String(data.address ?? ""))}, ${esc(String(data.city ?? ""))}`),
+        `<ul style="margin:8px 0;padding-left:18px;font-size:14px;color:#334155;">${lines}</ul>`,
+        p(`Sous-total : ${esc(String(data.subtotal ?? ""))} DH · Livraison : ${esc(String(data.shipping ?? ""))} DH${Number(data.discount ?? 0) > 0 ? ` · Remise : -${esc(String(data.discount))} DH` : ""}`),
+        p(`<strong>Total à encaisser : ${esc(String(data.total ?? ""))} DH</strong>`),
+        ...(data.notes ? [p(`Note du client : ${esc(String(data.notes))}`)] : []),
+        link(`${BASE_LINK}/admin/commandes/${encodeURIComponent(String(data.orderId ?? ""))}`, "Ouvrir la commande"),
+      ].join("");
+      return { subject: `Nouvelle commande ${ref} — ${String(data.total ?? "")} DH`, html: layout("Nouvelle commande", body) };
+    }
+    case "contact-admin": {
+      const subject = String(data.subject ?? "Demande de contact");
+      const body = [
+        p(`<strong>De :</strong> ${esc(String(data.name ?? ""))} · ${esc(String(data.email ?? ""))}${data.phone ? ` · ${esc(String(data.phone))}` : ""}`),
+        p(`<strong>Sujet :</strong> ${esc(subject)}`),
+        p(esc(String(data.message ?? "")).replace(/\n/g, "<br />")),
+        p("Répondez directement à cet email pour écrire au client."),
+      ].join("");
+      return { subject: `Contact site — ${subject}`, html: layout("Nouveau message de contact", body) };
+    }
+    case "password-reset": {
+      const url = `${BASE_LINK}/mot-de-passe/reinitialiser?token=${encodeURIComponent(String(data.token ?? ""))}`;
+      const body = [
+        p(`Bonjour ${esc(String(data.firstName ?? ""))},`),
+        p("Vous avez demandé à réinitialiser le mot de passe de votre compte Para Beauregard. Ce lien est valable 1 heure."),
+        link(url, "Choisir un nouveau mot de passe"),
+        p("Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email : votre mot de passe reste inchangé."),
+      ].join("");
+      return { subject: "Réinitialisation de votre mot de passe", html: layout("Mot de passe oublié", body) };
+    }
     case "stock-alert": {
       const name = String(data.productName ?? "");
       const slug = String(data.slug ?? "");

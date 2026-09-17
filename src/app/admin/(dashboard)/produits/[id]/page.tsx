@@ -6,6 +6,7 @@ import { ProductImagesEditor } from "@/components/product-images-editor";
 import { saveProductEdits, archiveProduct, duplicateProduct, updateProductStatus, updateProductImagesAction } from "@/lib/actions/admin";
 import { PageHeader } from "@/components/admin-shell";
 import { Check, Eye, Hourglass } from "lucide-react";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 async function saveProductEditsForm(formData: FormData) {
   "use server";
@@ -13,6 +14,7 @@ async function saveProductEditsForm(formData: FormData) {
 }
 
 export default async function AdminProductEditPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireAdminPagePermission("products:read");
   const { id } = await params;
   const productId = parseInt(id);
   if (!Number.isFinite(productId)) notFound();

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useEscapeClose } from "@/lib/use-escape-close";
 import { BrandLogo } from "@/components/brand-logo";
+import { canAccessAdminSection } from "@/lib/admin-permissions";
 import type { LucideIcon } from "lucide-react";
 import { BarChart3, Database, FolderTree, Globe2, KeyRound, MessageCircle, Package, ScrollText, Settings, ShieldCheck, ShoppingBag, Star, TicketPercent, Undo2, Users } from "lucide-react";
 
@@ -63,7 +64,7 @@ export function AdminShell({
         </div>
 
         <nav className="space-y-0.5 px-3 pb-6" aria-label="Navigation admin">
-          {NAV.filter((n) => !n.roles || n.roles.includes(role)).map((n) => {
+          {NAV.filter((n) => (!n.roles || n.roles.includes(role)) && canAccessAdminSection(role, n.href)).map((n) => {
             const active = n.href === "/admin" ? pathname === "/admin" : pathname.startsWith(n.href);
             const Icon = n.icon;
             return (

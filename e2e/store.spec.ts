@@ -107,7 +107,8 @@ test.describe("Site public", () => {
     await expect(summary).not.toContainText("peau.Le");
     await expect(summary).toContainText("3 actions : il dynamise");
     await expect(summary).not.toContainText("3 actions, il :Dynamise");
-    const description = page.locator("text=Description").locator("..").locator("div.prose-sm");
+    // Le bloc description peut être rendu deux fois (mobile + bureau) : on vérifie le premier.
+    const description = page.locator("text=Description").locator("..").locator("div.prose-sm").first();
     await expect(description).toContainText("peau. Le soin");
     await expect(description).toContainText("3 actions : il dynamise");
   });

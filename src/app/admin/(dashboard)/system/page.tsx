@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin-shell";
 import { StatusPill } from "@/components/status-pill";
 import { emailProviderStatus } from "@/lib/email";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 export const metadata = { title: "Système & santé — Admin", robots: { index: false } };
 
@@ -30,6 +31,7 @@ async function checkDatabase() {
 }
 
 export default async function AdminSystemPage() {
+  await requireAdminPagePermission("settings:read");
   const [dbCheck, env, emailLogs, pendingIssues, lastScrape, failedScrapes24h] = await Promise.all([
     checkDatabase(),
     envStatus(),

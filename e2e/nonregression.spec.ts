@@ -9,6 +9,11 @@ test.describe("Non-régression production (API & headers)", () => {
     expect(body.version).toBeTruthy();
     expect(body.service).toBe("para-beauregard-storefront");
     expect(typeof body.config).toBe("object");
+    // Sans session admin : seul le nombre de produits publiés est exposé.
+    expect(body.counts.products).toBeGreaterThan(0);
+    expect(body.counts.orders).toBeUndefined();
+    expect(body.counts.customers).toBeUndefined();
+    expect(body.config.emailKind).toBeUndefined();
     const raw = JSON.stringify(body);
     expect(raw).not.toContain("password");
     expect(raw).not.toContain("superSecret");

@@ -2,10 +2,12 @@ import { PageHeader } from "@/components/admin-shell";
 import { ReputationActions } from "@/components/admin/reputation-actions";
 import { isFirecrawlConfigured } from "@/lib/firecrawl";
 import { db } from "@/lib/db";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 export const metadata = { title: "Réputation Web — Admin", robots: { index: false } };
 
 export default async function ReputationAdminPage() {
+  await requireAdminPagePermission("reputation:read");
   const [products, analyzed, stale, errors, sourceRows] = await Promise.all([
     db.product.findMany({ where: { status: "PUBLISHED" }, orderBy: { updatedAt: "desc" }, take: 100, select: { id: true, name: true, brand: true, reputation: true } }),
     db.productReputation.count({ where: { status: "READY" } }),

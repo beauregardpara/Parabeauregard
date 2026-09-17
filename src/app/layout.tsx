@@ -122,7 +122,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const categories = (await getNavCategories()) as NavCategory[];
   const { cartItems, favorites } = await loadSyncedState();
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://parabeauregard.ma";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://para-beauregard.vercel.app";
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",

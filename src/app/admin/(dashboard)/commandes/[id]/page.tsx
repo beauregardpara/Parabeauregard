@@ -1,12 +1,15 @@
 import Link from "next/link";
+import { BUSINESS } from "@/config/business";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatDate, formatPrice } from "@/lib/format";
 import { PageHeader } from "@/components/admin-shell";
 import OrderStatusForm from "@/components/admin/order-status-form";
 import { FileText } from "lucide-react";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireAdminPagePermission("orders:read");
   const { id } = await params;
   const orderId = parseInt(id);
   if (!Number.isFinite(orderId)) notFound();
@@ -32,7 +35,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           <div className="mb-6 hidden justify-between border-b border-dashed border-slate-300 pb-6 print:flex">
             <div>
               <p className="font-display text-lg font-extrabold text-para-900">Para Beauregard</p>
-              <p className="text-xs text-slate-500">Casablanca · RC XXXXXX</p>
+              <p className="text-xs text-slate-500">{BUSINESS.locationLabel} · {BUSINESS.phoneDisplay}</p>
             </div>
             <div className="text-right text-xs text-slate-500">
               <p className="font-bold text-para-900">{order.reference}</p>

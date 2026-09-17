@@ -9,16 +9,22 @@ export default function MentionsLegalesPage() {
     <ContentPage title="Mentions légales">
       <h2>Éditeur du site</h2>
       <p>
-        <strong>Para Beauregard SARL</strong><br />
-        Capital : 100 000 MAD<br />
-        Siège social : Casablanca, Maroc<br />
-        RC : XXXXXX — ICE : XXXXXXXXXXXXX<br />
+        <strong>{BUSINESS.name}</strong><br />
+        {BUSINESS.locationLabel}<br />
         Téléphone : {BUSINESS.phoneDisplay}<br />
         Email : {BUSINESS.email}
       </p>
+      {/* Informations légales à fournir par l'exploitant : ne jamais les inventer. */}
+      <p>
+        Forme juridique, capital social, adresse du siège, RC, ICE et IF : informations en cours de
+        mise à jour par l'exploitant.
+      </p>
 
       <h2>Hébergement</h2>
-      <p>Hébergeur professionnel avec infrastructure redondante et sauvegardes quotidiennes.</p>
+      <p>
+        Site hébergé par Vercel Inc. (vercel.com). Base de données et images produits hébergées par
+        Supabase (supabase.com).
+      </p>
 
       <h2>Propriété intellectuelle</h2>
       <p>

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { getAdminSession } from "@/lib/auth";
 
 // Healthcheck sans secrets : ne renvoie que des compteurs et des booléens de config.
 function sanitizedConfig(): Record<string, unknown> {
@@ -59,17 +60,21 @@ export async function GET() {
     dbLatencyMs = Math.max(dbLatencyMs, Date.now() - t0);
   }
 
+  // Public : de quoi superviser le site (base, version, catalogue publié).
+  // Détail métier (commandes, clients…) et configuration : administrateurs seulement.
+  const isAdmin = Boolean(await getAdminSession().catch(() => null));
+  const publicCounts = typeof counts.products === "number" ? { products: counts.products } : {};
+
   return Response.json(
     {
       ok: database === "ok",
       status: database === "ok" ? "ok" : "error",
       version: VERSION,
       service: "para-beauregard-storefront",
-      uptimeSeconds: Math.floor(process.uptime()),
       database,
       dbLatencyMs,
-      counts,
-      config: sanitizedConfig(),
+      counts: isAdmin ? counts : publicCounts,
+      config: isAdmin ? { ...sanitizedConfig(), uptimeSeconds: Math.floor(process.uptime()) } : {},
       timestamp: new Date().toISOString(),
     },
     {

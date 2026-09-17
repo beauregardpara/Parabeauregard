@@ -3,11 +3,15 @@ import { db } from "@/lib/db";
 import { formatDate, formatPrice } from "@/lib/format";
 import { PageHeader } from "@/components/admin-shell";
 import { StatusPill } from "@/components/status-pill";
-import { getRevenueSeries, getRevenueByCategory, getPaymentSplit, getCancellationStats, getAverageBasket } from "@/lib/analytics";
-import { Banknote, ChartNoAxesColumnIncreasing, Clock3, Package, ShoppingBasket, TriangleAlert, Undo2 } from "lucide-react";
+import { getRevenueSeries, getRevenueByCategory, getPaymentSplit, getCancellationStats, getAverageBasket, getOperationsSnapshot } from "@/lib/analytics";
+import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
+import { Banknote, CalendarDays, ChartNoAxesColumnIncreasing, Clock3, Inbox, Mail, Package, PackageSearch, ShoppingBasket, TriangleAlert, Undo2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 export default async function AdminHomePage() {
+  await requireAdminPagePermission("orders:read");
+  const lowStockThreshold = (await getSettingNumber(SETTING_KEYS.lowStockAlerts)) || 3;
   const [totalRevenue, monthRevenue, monthOrdersCount, pendingCount, outOfStockCount, lastRuns, topSold, recentOrders, series, byCategory, paymentSplit, cancellation, avgBasket] =
     await Promise.all([
       db.order.aggregate({ _sum: { total: true }, where: { status: { not: "CANCELLED" } } }),
@@ -40,11 +44,28 @@ export default async function AdminHomePage() {
       getCancellationStats(),
       getAverageBasket(),
     ]);
+  const [ops, contactMessages] = await Promise.all([
+    getOperationsSnapshot(lowStockThreshold),
+    db.activityLog.findMany({ where: { action: "CONTACT" }, orderBy: { createdAt: "desc" }, take: 5 }),
+  ]);
+  const messages = contactMessages.map((m) => {
+    let details: { name?: string; email?: string; phone?: string; subject?: string; message?: string } = {};
+    try {
+      details = JSON.parse(m.details ?? "{}");
+    } catch {}
+    return { id: m.id, createdAt: m.createdAt, ...details };
+  });
 
   const monthRevenueValue = monthRevenue._sum.total ?? 0;
   const maxDaily = Math.max(1, ...series.map((s) => s.revenue));
 
   const kpis = [
+    { label: "Commandes aujourd'hui", value: String(ops.ordersToday), icon: CalendarDays, href: "/admin/commandes" },
+    { label: "CA aujourd'hui", value: formatPrice(ops.revenueToday), icon: Banknote },
+    { label: "À traiter", value: String(ops.toProcess), icon: Inbox, href: "/admin/commandes" },
+    { label: "CA 7 jours", value: formatPrice(ops.revenue7d), icon: ChartNoAxesColumnIncreasing },
+    { label: "CA 30 jours", value: formatPrice(ops.revenue30d), icon: ChartNoAxesColumnIncreasing },
+    { label: `Stock faible (≤ ${lowStockThreshold})`, value: String(ops.lowStock), icon: PackageSearch, href: "/admin/produits?stock=faible" },
     { label: "CA total", value: formatPrice(totalRevenue._sum.total ?? 0), icon: Banknote, href: "/admin/commandes" },
     { label: "CA ce mois", value: formatPrice(monthRevenueValue), icon: ChartNoAxesColumnIncreasing },
     { label: "Commandes du mois", value: String(monthOrdersCount), icon: Package, href: "/admin/commandes" },
@@ -85,6 +106,33 @@ export default async function AdminHomePage() {
                     </span>
                     <strong className="text-sm">{formatPrice(o.total)}</strong>
                   </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Messages de contact */}
+        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
+          <header className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+            <h2 className="font-display font-bold">Derniers messages de contact</h2>
+            <Link href="/admin/journal" className="text-xs font-bold text-para-600 hover:underline">Journal →</Link>
+          </header>
+          {messages.length === 0 ? (
+            <p className="p-8 text-center text-sm text-slate-400">Aucun message pour le moment.</p>
+          ) : (
+            <ul className="divide-y divide-slate-50">
+              {messages.map((m) => (
+                <li key={m.id} className="flex items-start gap-3 px-5 py-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-para-50 text-para-700"><Mail size={17} strokeWidth={1.7} aria-hidden /></span>
+                  <span className="min-w-0 flex-1">
+                    <strong className="block text-sm">{m.subject ?? "Demande de contact"}</strong>
+                    <span className="block text-xs text-slate-400">
+                      {m.name} · {m.email ? <a href={`mailto:${m.email}`} className="text-para-700 hover:underline">{m.email}</a> : null}
+                      {m.phone ? <> · <a href={`tel:${m.phone}`} className="text-para-700 hover:underline">{m.phone}</a></> : null} · {formatDate(m.createdAt)}
+                    </span>
+                    {m.message && <span className="mt-1 line-clamp-2 block text-xs text-slate-600">{m.message}</span>}
+                  </span>
                 </li>
               ))}
             </ul>

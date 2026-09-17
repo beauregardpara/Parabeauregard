@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@/lib/db";
 import { buildMedicalSafetyReply, detectMedicalRequest, findProductsForChat, type ChatProductHit } from "@/lib/chat";
 import { applyContextToMessage, getChatNeed, updateChatNeed } from "@/lib/chat/context";
+import { buildSupportReply, detectSupportIntent, getSupportInfo } from "@/lib/chat/support";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/security/rate-limit";
 import { logger, newRequestId } from "@/lib/logger";
 
@@ -165,6 +166,15 @@ export async function POST(req: NextRequest) {
     // aucune recommandation produit pour une demande de décision médicale.
     if (detectMedicalRequest(message)) {
       const reply = buildMedicalSafetyReply(message);
+      await db.chatMessage.create({ data: { sessionId: session.id, role: "assistant", content: reply } });
+      return NextResponse.json({ reply, products: [], sessionKey });
+    }
+
+    // Questions pratiques (livraison, paiement, contact…) : réponse factuelle
+    // issue de la configuration, sans recommandation de produit.
+    const supportIntent = detectSupportIntent(message);
+    if (supportIntent) {
+      const reply = buildSupportReply(supportIntent, await getSupportInfo());
       await db.chatMessage.create({ data: { sessionId: session.id, role: "assistant", content: reply } });
       return NextResponse.json({ reply, products: [], sessionKey });
     }

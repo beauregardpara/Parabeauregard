@@ -114,7 +114,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       "@type": "ListItem",
       position: i + 1,
       name: c.name,
-      item: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://parabeauregard.ma"}${c.href}`,
+      item: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://para-beauregard.vercel.app"}${c.href}`,
     })),
   };
   const safeBreadcrumbJsonLd = JSON.stringify(breadcrumbJsonLd)

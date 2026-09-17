@@ -26,7 +26,16 @@ export function ContactForm() {
         <input required type="email" name="email" placeholder="Votre email *" aria-label="Email"
           className="w-full rounded-xl border border-para-200 px-4 py-2.5 text-sm outline-none focus:border-para-400" />
       </div>
-      <input name="subject" placeholder="Sujet" aria-label="Sujet"
+      <input type="tel" name="phone" placeholder="Téléphone (facultatif)" aria-label="Téléphone" autoComplete="tel"
+        className="w-full rounded-xl border border-para-200 px-4 py-2.5 text-sm outline-none focus:border-para-400" />
+      {/* Champ piège anti-spam, invisible pour les visiteurs */}
+      <div aria-hidden="true" className="hidden">
+        <label>
+          Ne pas remplir
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" />
+        </label>
+      </div>
+      <input name="subject" placeholder="Sujet (facultatif)" aria-label="Sujet"
         className="w-full rounded-xl border border-para-200 px-4 py-2.5 text-sm outline-none focus:border-para-400" />
       <textarea required name="message" rows={5} placeholder="Votre message *" aria-label="Message"
         className="w-full rounded-xl border border-para-200 px-4 py-2.5 text-sm outline-none focus:border-para-400" />

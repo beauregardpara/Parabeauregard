@@ -6,13 +6,18 @@ import { StatusPill } from "@/components/status-pill";
 import { bulkProductAction } from "@/lib/actions/admin";
 import { PageHeader } from "@/components/admin-shell";
 import { Clock3, Database, Eye, Plus, Search, Trash2, Upload } from "lucide-react";
+import { requireAdminPagePermission } from "@/lib/auth";
+import { foldForSearch } from "@/lib/product-name";
+import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
 
 export default async function AdminProductsPage({
   searchParams,
 }: {
   searchParams: Promise<{ statut?: string; source?: string; q?: string; page?: string; marque?: string; categorie?: string; stock?: string; promo?: string; tri?: string }>;
 }) {
+  await requireAdminPagePermission("products:read");
   const sp = await searchParams;
+  const lowStockThreshold = (await getSettingNumber(SETTING_KEYS.lowStockAlerts)) || 3;
   const where: Record<string, unknown> = {};
   if (sp.statut === "RUPTURE") {
     where.status = "PUBLISHED";
@@ -20,10 +25,23 @@ export default async function AdminProductsPage({
     where.unlimitedStock = false;
   } else if (sp.statut) where.status = sp.statut;
   if (sp.source) where.sourceName = sp.source;
-  if (sp.q) where.OR = [{ name: { contains: sp.q } }, { sku: { contains: sp.q } }, { brand: { contains: sp.q } }];
+  if (sp.q) {
+    // PostgreSQL compare les LIKE en respectant la casse et les accents : on
+    // cherche aussi dans le texte replié (« avene » trouve « Avène »).
+    const q = sp.q.trim();
+    const folded = foldForSearch(q);
+    const id = /^\d+$/.test(q) ? Number(q) : null;
+    where.OR = [
+      ...(folded ? [{ searchText: { contains: folded } }, { slug: { contains: folded.replace(/\s+/g, "-") } }] : []),
+      { name: { contains: q } },
+      { sku: { contains: q } },
+      { brand: { contains: q } },
+      ...(id ? [{ id }] : []),
+    ];
+  }
   if (sp.marque) where.brand = sp.marque;
   if (sp.categorie) where.categoryId = Number(sp.categorie);
-  if (sp.stock === "faible") { where.stock = { lte: 3, gt: 0 }; where.unlimitedStock = false; }
+  if (sp.stock === "faible") { where.stock = { lte: lowStockThreshold, gt: 0 }; where.unlimitedStock = false; }
   if (sp.stock === "rupture") { where.stock = 0; where.unlimitedStock = false; }
   if (sp.promo === "oui") where.promoPrice = { not: null };
 

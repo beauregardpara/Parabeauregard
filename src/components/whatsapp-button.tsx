@@ -18,7 +18,7 @@ export function WhatsAppButton({
 }) {
   const message = productName
     ? `Bonjour, j'aimerais avoir plus d'informations sur « ${productName} ».`
-    : "Bonjour, j'aimerais poser une question à Para Beauregard.";
+    : "Bonjour Para Beauregard, je souhaite avoir des informations concernant ";
   return (
     <Link href={whatsappLink(message)} target="_blank" rel="noopener noreferrer" className={className} aria-label="Nous contacter sur WhatsApp">
       <WhatsAppIcon className="h-4 w-4 text-green-600" />

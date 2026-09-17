@@ -2,8 +2,10 @@ import { db } from "@/lib/db";
 import { saveCategory, deleteCategory } from "@/lib/actions/admin";
 import { PageHeader } from "@/components/admin-shell";
 import { FolderTree, Save, Trash2 } from "lucide-react";
+import { requireAdminPagePermission } from "@/lib/auth";
 
 export default async function AdminCategoriesPage() {
+  await requireAdminPagePermission("categories:read");
   const [parents, all] = await Promise.all([
     db.category.findMany({ where: { parentId: null }, orderBy: { order: "asc" }, include: { children: true, _count: { select: { products: true } } } }),
     db.category.findMany({ select: { id: true, name: true } }),

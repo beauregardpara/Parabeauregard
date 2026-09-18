@@ -3,6 +3,14 @@ import Link from "next/link";
 export default function NotFound() {
   return (
     <div className="mx-auto grid max-w-xl place-items-center px-4 py-28 text-center">
+      {/*
+        Le layout racine est dynamique : son shell est déjà envoyé quand une page
+        appelle `notFound()`, donc Next.js ne peut plus remplacer le statut 200
+        déjà émis par un 404 sur les routes dynamiques (/produits/[slug], etc.).
+        Ce `noindex` empêche les moteurs d'indexer ces URL inexistantes, qui sont
+        en nombre illimité — c'est le préjudice réel du « soft 404 ».
+      */}
+      <meta name="robots" content="noindex, follow" />
       <span className="text-7xl" aria-hidden>🔍</span>
       <h1 className="mt-6 font-display text-4xl font-extrabold text-para-950">Page introuvable</h1>
       <p className="mt-3 max-w-md text-slate-600">

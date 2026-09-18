@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { db } from "@/lib/db";
@@ -8,6 +9,12 @@ import { RecentlyViewedSection } from "@/components/recently-viewed-section";
 import { FREE_SHIPPING_THRESHOLD_DH, RETURN_DAYS } from "@/lib/constants";
 import { slugify } from "@/lib/format";
 import { AssistantCta } from "@/components/assistant-cta";
+
+export const metadata: Metadata = {
+  // Canonical déclaré page par page (jamais dans le layout racine, qui le
+  // ferait hériter par toutes les pages).
+  alternates: { canonical: "/" },
+};
 
 export const revalidate = 60;
 

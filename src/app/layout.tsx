@@ -28,6 +28,24 @@ export const metadata: Metadata = {
     "Parapharmacie en ligne marocaine : soins visage et corps, cheveux, solaire, bébé, hygiène et compléments alimentaires. Produits authentiques, paiement à la livraison partout au Maroc.",
   keywords: ["parapharmacie maroc", "parapharmacie en ligne", "soins visage", "beauté maroc", "produits parapharmaceutiques"],
   manifest: "/manifest",
+  // Hérité par toutes les pages ; les fiches produit surchargent titre et image.
+  // Volontairement aucun `alternates.canonical` ici : il serait hérité tel quel
+  // et ferait pointer chaque page vers l'accueil.
+  openGraph: {
+    type: "website",
+    siteName: "Para Beauregard",
+    locale: "fr_MA",
+    url: SITE_URL,
+    title: "Para Beauregard — Parapharmacie en ligne au Maroc",
+    description:
+      "Parapharmacie en ligne marocaine : soins visage et corps, cheveux, solaire, bébé, hygiène et compléments alimentaires. Produits authentiques, paiement à la livraison partout au Maroc.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Para Beauregard — Parapharmacie en ligne au Maroc",
+    description:
+      "Parapharmacie en ligne marocaine : produits authentiques, paiement à la livraison partout au Maroc.",
+  },
 };
 
 export const viewport: Viewport = {

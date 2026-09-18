@@ -20,6 +20,28 @@ test.describe("Lancement — honnêteté et sécurité", () => {
     await expect(page.getByRole("main")).not.toContainText("5 jours");
   });
 
+  test("une URL produit inexistante n'est pas indexable, une fiche réelle l'est", async ({ page }) => {
+    // Le layout racine étant dynamique, Next.js ne peut plus corriger le statut
+    // 200 déjà émis sur ces routes : le `noindex` est ce qui empêche
+    // l'indexation d'un nombre illimité d'URL inexistantes.
+    await page.goto("/produits/slug-qui-nexiste-pas-123");
+    await expect(page.getByRole("heading", { name: "Page introuvable" })).toBeVisible();
+
+    // On vérifie le HTML réellement servi : c'est ce que lit un robot
+    // d'indexation, indépendamment de l'hydratation côté client.
+    const missing = await page.request.get("/produits/slug-qui-nexiste-pas-123");
+    expect(missing.status()).toBeLessThan(500);
+    expect(await missing.text()).toMatch(/<meta name="robots"[^>]*noindex/);
+
+    // Une fiche réellement publiée doit rester indexable et canonique.
+    const slug = "guinot-longue-vie-creme-jeunesse-revitalisante-visage-homme-50-ml";
+    const real = await page.request.get(`/produits/${slug}`);
+    expect(real.status()).toBe(200);
+    const realHead = (await real.text()).split("</head>")[0];
+    expect(realHead).not.toMatch(/<meta name="robots"[^>]*noindex/);
+    expect(realHead).toMatch(/<link rel="canonical"/);
+  });
+
   test("la page de connexion admin n'affiche aucun identifiant", async ({ page }) => {
     await page.goto("/admin/login");
     await expect(page.locator("body")).not.toContainText("admin123");

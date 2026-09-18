@@ -13,9 +13,17 @@ async function saveProductEditsForm(formData: FormData) {
   await saveProductEdits(formData);
 }
 
-export default async function AdminProductEditPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AdminProductEditPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ photos?: string }>;
+}) {
   await requireAdminPagePermission("products:read");
   const { id } = await params;
+  // Nombre de photos non envoyées lors de la création (voir AdminProductForm).
+  const failedPhotos = Math.max(0, parseInt((await searchParams).photos ?? "0") || 0);
   const productId = parseInt(id);
   if (!Number.isFinite(productId)) notFound();
 
@@ -105,6 +113,12 @@ export default async function AdminProductEditPage({ params }: { params: Promise
 
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 font-display font-bold">Images ({product.images.length})</h2>
+            {failedPhotos > 0 && (
+              <p role="alert" className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                Le produit est bien créé, mais {failedPhotos} photo{failedPhotos > 1 ? "s n’ont" : " n’a"} pas pu être envoyée{failedPhotos > 1 ? "s" : ""}.
+                Ajoutez-la{failedPhotos > 1 ? "s" : ""} à nouveau ci-dessous.
+              </p>
+            )}
             <ProductImagesEditor
               productId={product.id}
               productName={product.name}

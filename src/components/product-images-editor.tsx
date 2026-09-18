@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ProductImage from "@/components/product-image";
 import { uploadProductImageAction } from "@/lib/actions/admin";
+import { compressProductImage, MAX_UPLOAD_BYTES } from "@/lib/image-compress";
 import type { updateProductImagesAction } from "@/lib/actions/admin";
 
 type Props = {
@@ -40,20 +41,31 @@ export function ProductImagesEditor({ productId, productName, images, actionFn }
     setPending(true);
     setMsg(null);
     let uploaded = 0;
-    for (const file of selected) {
-    const data = new FormData();
-    data.set("productId", String(productId));
-    data.set("file", file);
-    const result = await uploadProductImageAction(data);
-    if (!result.ok || !result.url) {
-      setMsg({ ok: false, text: result.error ?? "Upload impossible." });
+    const errors: string[] = [];
+    for (const original of selected) {
+      const file = await compressProductImage(original);
+      if (file.size > MAX_UPLOAD_BYTES) {
+        errors.push(`${original.name} : image trop lourde, même après réduction.`);
+        continue;
+      }
+      const data = new FormData();
+      data.set("productId", String(productId));
+      data.set("file", file);
+      const result = await uploadProductImageAction(data).catch(() => ({ ok: false as const, url: undefined, error: "Envoi interrompu." }));
+      if (!result.ok || !result.url) {
+        errors.push(`${original.name} : ${result.error ?? "upload impossible."}`);
         continue;
       }
       uploaded += 1;
       setItems((prev) => [...prev, { id: Date.now() + uploaded, url: result.url!, alt: productName }]);
     }
     setPending(false);
-    if (uploaded) setMsg({ ok: true, text: `${uploaded} image${uploaded > 1 ? "s" : ""} ajoutée${uploaded > 1 ? "s" : ""}.` });
+    // Une erreur ne doit jamais être masquée par le succès des autres fichiers.
+    const parts = [
+      uploaded ? `${uploaded} image${uploaded > 1 ? "s" : ""} ajoutée${uploaded > 1 ? "s" : ""}.` : "",
+      ...errors,
+    ].filter(Boolean);
+    if (parts.length) setMsg({ ok: errors.length === 0, text: parts.join(" ") });
   }
 
   function move(index: number, direction: -1 | 1) {
@@ -109,7 +121,7 @@ export function ProductImagesEditor({ productId, productName, images, actionFn }
         onDrop={(event) => { event.preventDefault(); void uploadFiles(Array.from(event.dataTransfer.files)); }}
       >
         <span className="font-bold">Déposer une image ici ou choisir un fichier</span>
-        <span className="mt-1 text-[11px] text-slate-400">JPEG, PNG ou WEBP · 5 Mo maximum</span>
+        <span className="mt-1 text-[11px] text-slate-400">JPEG, PNG ou WEBP · les photos lourdes sont réduites automatiquement</span>
         <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={(event) => { void uploadFiles(Array.from(event.target.files ?? [])); event.currentTarget.value = ""; }} />
       </label>
 

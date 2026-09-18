@@ -36,6 +36,14 @@ const nextConfig: NextConfig = {
   // Sortie autonome : image Docker minimale (voir Dockerfile).
   output: "standalone",
 
+  // Les Server Actions refusent par défaut toute requête de plus de 1 Mo, ce
+  // qui bloquait l'upload des photos produit. Les images sont déjà réduites
+  // dans le navigateur (src/lib/image-compress.ts) ; cette limite reste un filet
+  // de sécurité, sous le plafond de 4,5 Mo des fonctions Vercel.
+  experimental: {
+    serverActions: { bodySizeLimit: "4mb" },
+  },
+
   images: {
     unoptimized: true,
     remotePatterns: [

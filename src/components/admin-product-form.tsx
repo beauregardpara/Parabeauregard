@@ -1,8 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { createProduct, saveProductEdits } from "@/lib/actions/admin";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { createProduct, saveProductEdits, uploadProductImageAction } from "@/lib/actions/admin";
+import { ACCEPTED_IMAGE_TYPES, compressProductImage, MAX_UPLOAD_BYTES } from "@/lib/image-compress";
+
+const MAX_PHOTOS = 12;
+type PendingPhoto = { key: string; file: File; preview: string };
 
 type Category = { id: number; name: string; parentId: number | null };
 type ProductValue = {
@@ -30,6 +34,67 @@ export function AdminProductForm({ categories, product }: { categories: Category
   const [success, setSuccess] = useState(false);
   const [name, setName] = useState(product?.name ?? "");
   const [slug, setSlug] = useState(product?.slug ?? "");
+  // Photos choisies à la création : envoyées juste après l'enregistrement du
+  // produit, car l'upload a besoin de son identifiant.
+  const [photos, setPhotos] = useState<PendingPhoto[]>([]);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+  const photosRef = useRef(photos);
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+  useEffect(() => () => photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.preview)), []);
+
+  function addPhotos(files: File[]) {
+    setError(null);
+    const images = files.filter((file) => ACCEPTED_IMAGE_TYPES.includes(file.type as (typeof ACCEPTED_IMAGE_TYPES)[number]));
+    if (images.length < files.length) setError("Seules les images JPEG, PNG ou WEBP sont acceptées.");
+    setPhotos((prev) => [
+      ...prev,
+      ...images.slice(0, Math.max(0, MAX_PHOTOS - prev.length)).map((file) => ({
+        key: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
+        file,
+        preview: URL.createObjectURL(file),
+      })),
+    ]);
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => {
+      URL.revokeObjectURL(prev[index].preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
+
+  function movePhoto(index: number, direction: -1 | 1) {
+    setPhotos((prev) => {
+      const next = index + direction;
+      if (next < 0 || next >= prev.length) return prev;
+      const copy = [...prev];
+      [copy[index], copy[next]] = [copy[next], copy[index]];
+      return copy;
+    });
+  }
+
+  /** Envoie les photos dans l'ordre choisi ; renvoie le nombre d'échecs. */
+  async function uploadPhotos(productId: number): Promise<number> {
+    let failed = 0;
+    for (const [index, photo] of photos.entries()) {
+      setProgress(`Envoi des photos ${index + 1}/${photos.length}…`);
+      const file = await compressProductImage(photo.file);
+      if (file.size > MAX_UPLOAD_BYTES) {
+        failed += 1;
+        continue;
+      }
+      const data = new FormData();
+      data.set("productId", String(productId));
+      data.set("file", file);
+      const result = await uploadProductImageAction(data).catch(() => ({ ok: false }));
+      if (!result.ok) failed += 1;
+    }
+    setProgress(null);
+    return failed;
+  }
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,8 +109,16 @@ export function AdminProductForm({ categories, product }: { categories: Category
         return;
       }
       if (!product && result.id) {
-        router.push(`/admin/produits/${result.id}`);
-        router.refresh();
+        // Le produit existe désormais : un échec de photo ne doit pas le faire
+        // recréer, on le signale sur sa fiche où l'on peut réessayer.
+        const failed = photos.length ? await uploadPhotos(result.id) : 0;
+        // Navigation complète plutôt que `router.push` : chaque upload appelle
+        // `revalidatePath`, et un `router.push` lancé ensuite dans la même
+        // transition peut rester bloqué indéfiniment (bouton figé sur
+        // « Enregistrement… »). Le bouton reste verrouillé jusqu'au départ de la
+        // page pour empêcher toute double création.
+        setRedirecting(true);
+        window.location.assign(`/admin/produits/${result.id}${failed ? `?photos=${failed}` : ""}`);
       } else {
         setSuccess(true);
         router.refresh();
@@ -98,6 +171,49 @@ export function AdminProductForm({ categories, product }: { categories: Category
           </div>
         </section>
 
+        {!product && (
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-1 font-display font-bold">Photos du produit</h2>
+            <p className="mb-4 text-xs text-slate-500">
+              La première photo est la photo principale. Elles sont envoyées à l&apos;enregistrement du produit.
+            </p>
+            {photos.length > 0 && (
+              <ul className="mb-4 flex flex-wrap gap-3" aria-label="Photos sélectionnées">
+                {photos.map((photo, index) => (
+                  <li key={photo.key} className="relative h-28 w-24 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- aperçu local (blob:) avant upload */}
+                    <img src={photo.preview} alt={`Photo ${index + 1}`} className="h-full w-full object-cover" />
+                    <button type="button" onClick={() => removePhoto(index)} aria-label={`Retirer la photo ${index + 1}`}
+                      className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/90 text-[11px] font-bold text-red-500 shadow hover:bg-red-500 hover:text-white">✕</button>
+                    <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1.5 py-0.5 text-[9px] font-bold text-slate-600">{index === 0 ? "Principale" : `#${index + 1}`}</span>
+                    <div className="absolute bottom-1 right-1 flex gap-0.5">
+                      <button type="button" onClick={() => movePhoto(index, -1)} disabled={index === 0} aria-label={`Déplacer la photo ${index + 1} vers la gauche`} className="grid h-5 w-5 place-items-center rounded bg-white/90 text-[10px] disabled:opacity-30">←</button>
+                      <button type="button" onClick={() => movePhoto(index, 1)} disabled={index === photos.length - 1} aria-label={`Déplacer la photo ${index + 1} vers la droite`} className="grid h-5 w-5 place-items-center rounded bg-white/90 text-[10px] disabled:opacity-30">→</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {photos.length < MAX_PHOTOS ? (
+              <label
+                className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-para-200 bg-para-50/40 px-4 py-6 text-center text-sm text-para-700 transition hover:bg-para-50"
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => { event.preventDefault(); addPhotos(Array.from(event.dataTransfer.files)); }}
+              >
+                <span className="font-bold">Ajouter des photos</span>
+                <span className="mt-1 text-xs text-slate-500">Glissez-les ici ou cliquez pour choisir · JPEG, PNG ou WEBP · {photos.length}/{MAX_PHOTOS}</span>
+                <span className="mt-1 text-[11px] text-slate-400">Les photos lourdes sont réduites automatiquement.</span>
+                {/* Sans attribut `name` : les fichiers ne partent pas avec les champs du produit. */}
+                <input type="file" accept={ACCEPTED_IMAGE_TYPES.join(",")} multiple className="sr-only"
+                  aria-label="Choisir des photos du produit"
+                  onChange={(event) => { addPhotos(Array.from(event.target.files ?? [])); event.currentTarget.value = ""; }} />
+              </label>
+            ) : (
+              <p className="text-xs text-slate-500">Maximum de {MAX_PHOTOS} photos atteint.</p>
+            )}
+          </section>
+        )}
+
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="mb-1 font-display font-bold">Publication</h2>
           <p className="mb-4 text-xs text-slate-500">Enregistrez en brouillon pour préparer la fiche avant de la rendre visible.</p>
@@ -127,14 +243,16 @@ export function AdminProductForm({ categories, product }: { categories: Category
           <label className="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" name="isFeatured" defaultChecked={product?.isFeatured} className="h-4 w-4 accent-para-600" /> Mettre en avant</label>
         </section>
 
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-xs leading-relaxed text-slate-500">
-          {product ? "Les images se gèrent dans la section Images ci-dessous, après l’enregistrement." : "Enregistrez d’abord le produit : l’upload sécurisé des images sera disponible sur sa fiche."}
-        </div>
+        {product && (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-xs leading-relaxed text-slate-500">
+            Les images se gèrent dans la section Images ci-dessous.
+          </div>
+        )}
 
         {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
         {success && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">Modifications enregistrées.</p>}
-        <button type="submit" disabled={pending} className="w-full rounded-xl bg-para-800 py-3 font-bold text-white shadow-lift transition hover:bg-para-900 disabled:opacity-50">
-          {pending ? "Enregistrement…" : product ? "Enregistrer les modifications" : "Enregistrer le produit"}
+        <button type="submit" disabled={pending || redirecting} className="w-full rounded-xl bg-para-800 py-3 font-bold text-white shadow-lift transition hover:bg-para-900 disabled:opacity-50">
+          {redirecting ? "Ouverture de la fiche…" : progress ?? (pending ? "Enregistrement…" : product ? "Enregistrer les modifications" : "Enregistrer le produit")}
         </button>
         <button type="button" onClick={() => router.push("/admin/produits")} className="w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600">Annuler</button>
       </aside>

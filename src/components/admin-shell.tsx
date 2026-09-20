@@ -50,7 +50,6 @@ export function AdminShell({
     <div className="flex min-h-dvh bg-[#faf8f6]">
       {/* Sidebar */}
       <aside
-        inert={!open}
         aria-label="Navigation admin"
         className={`fixed inset-y-0 left-0 z-40 w-64 transform overflow-y-auto bg-gradient-to-b from-para-950 to-para-900 text-white transition-transform lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"

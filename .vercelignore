@@ -9,6 +9,7 @@ para-beauregard-mockup
 references
 .agents
 .claude
+RECAP-SESSION.md
 
 # Secrets locaux : jamais envoyés avec un déploiement CLI
 .env

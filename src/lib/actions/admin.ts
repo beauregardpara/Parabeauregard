@@ -488,6 +488,13 @@ export async function reorderProductImagesAction(productId: number, imageIds: nu
 export async function deleteProduct(formData: FormData) {
   await requireRole("SUPER_ADMIN", "CATALOG_MANAGER");
   const id = Number(formData.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return;
+  const product = await db.product.findUnique({ where: { id }, include: { images: true } });
+  if (!product) return;
+  for (const image of product.images) {
+    const storage = await deleteSupabaseProductImage(image.url, id);
+    if (!storage.ok) throw new Error(storage.error);
+  }
   await db.product.delete({ where: { id } });
   await logAction("Suppression produit", "Product", String(id));
   revalidatePath("/admin/produits");

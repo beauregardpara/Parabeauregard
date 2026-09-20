@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { formatDate, formatPrice } from "@/lib/format";
 import { ProductImagesEditor } from "@/components/product-images-editor";
 import { saveProductEdits, archiveProduct, duplicateProduct, updateProductStatus, updateProductImagesAction } from "@/lib/actions/admin";
+import { AdminDeleteProductButton } from "@/components/admin-delete-product-button";
 import { PageHeader } from "@/components/admin-shell";
 import { Check, Eye, Hourglass } from "lucide-react";
 import { requireAdminPagePermission } from "@/lib/auth";
@@ -212,10 +213,12 @@ export default async function AdminProductEditPage({
           </section>
 
           {!product.sourceName || product.sourceName === "manuel" ? (
-            <button formAction={archiveProduct}
-              className="btn-3d w-full rounded-xl border border-red-200 bg-red-50 py-2.5 text-xs font-bold text-red-600 hover:bg-red-100">
-              Archiver ce produit
-            </button>
+            <>
+              <button formAction={archiveProduct}
+                className="btn-3d w-full rounded-xl border border-red-200 bg-red-50 py-2.5 text-xs font-bold text-red-600 hover:bg-red-100">
+                Archiver ce produit
+              </button>
+            </>
           ) : (
             <p className="rounded-xl bg-slate-50 px-4 py-3 text-center text-[11px] leading-relaxed text-slate-400">
               Produit issu du scraping : il sera resynchronisé à la prochaine exécution. Utilisez le statut « Masqué » pour le retirer de la vente.
@@ -223,6 +226,11 @@ export default async function AdminProductEditPage({
           )}
         </aside>
       </form>
+      <section className="mt-5 rounded-2xl border border-red-200 bg-red-50/60 p-5 xl:ml-auto xl:w-[360px]">
+        <h2 className="mb-2 font-display font-bold text-red-800">Zone dangereuse</h2>
+        <p className="mb-3 text-xs leading-relaxed text-red-700">La suppression définitive retire le produit de la base et ses photos gérées par Supabase. Cette action est irréversible.</p>
+        <AdminDeleteProductButton productId={product.id} productName={product.name} />
+      </section>
     </>
   );
 }

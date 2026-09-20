@@ -17,6 +17,7 @@ type ImportedProduct = {
   categoryId?: number | null;
   categorySlug?: string | null;
   categoryName?: string | null;
+  category?: string | null;
   shortDescription?: string | null;
   description?: string | null;
   price: number;
@@ -26,7 +27,8 @@ type ImportedProduct = {
   unlimitedStock?: boolean;
   isFeatured?: boolean;
   isNew?: boolean;
-  status?: "PENDING_REVIEW" | "PUBLISHED" | "HIDDEN";
+  status?: string;
+  priority?: boolean;
   images?: ImportedImage[];
 };
 
@@ -52,6 +54,40 @@ function parseProducts(text: string): ImportedProduct[] {
 function findZipFile(files: ZipFiles, path: string) {
   const normalized = path.replace(/^\.\//, "").replace(/^\//, "");
   return files[normalized] ?? files[`images/${normalized.replace(/^images\//, "")}`];
+}
+
+function normalizeLabel(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function resolveCategoryId(product: ImportedProduct, categories: Category[]) {
+  if (product.categoryId) {
+    const match = categories.find((category) => category.id === product.categoryId);
+    if (match) return match.id;
+  }
+  const requested = product.categorySlug ?? product.categoryName ?? product.category ?? "";
+  if (!requested) return null;
+  const label = normalizeLabel(requested);
+  const exact = categories.find((category) => normalizeLabel(category.slug) === label || normalizeLabel(category.name) === label);
+  if (exact) return exact.id;
+  const partial = categories.find((category) => {
+    const candidate = normalizeLabel(category.name);
+    return candidate.includes(label) || label.includes(candidate) || label.split(" ").some((word) => word.length > 3 && candidate.includes(word));
+  });
+  return partial?.id ?? null;
+}
+
+function normalizeStatus(value: string | undefined) {
+  const status = (value ?? "PENDING_REVIEW").trim().toUpperCase();
+  if (["PENDING", "PENDING_REVIEW", "DRAFT", "REVIEW"].includes(status)) return "PENDING_REVIEW" as const;
+  if (["PUBLISHED", "PUBLISH", "PUBLIC", "LIVE"].includes(status)) return "PUBLISHED" as const;
+  if (["HIDDEN", "HIDE", "ARCHIVED", "ARCHIVE", "MASQUE"].includes(status)) return "HIDDEN" as const;
+  return null;
 }
 
 export function AdminProductImport({ categories }: { categories: Category[] }) {
@@ -83,18 +119,28 @@ export function AdminProductImport({ categories }: { categories: Category[] }) {
     const failures: string[] = [];
     const categoriesById = new Map(categories.map((category) => [category.id, category.id]));
     const categoriesBySlug = new Map(categories.map((category) => [category.slug, category.id]));
-    const categoriesByName = new Map(categories.map((category) => [category.name.toLowerCase(), category.id]));
 
     for (const [index, product] of products.entries()) {
       if (!product.name || typeof product.price !== "number") {
         failures.push(`Produit ${index + 1} : nom ou prix manquant.`);
         continue;
       }
+      const status = normalizeStatus(product.status);
+      if (!status) {
+        failures.push(`${product.name} : statut inconnu (${product.status}).`);
+        continue;
+      }
       const categoryId = product.categoryId && categoriesById.get(product.categoryId)
         ? product.categoryId
-        : product.categorySlug ? categoriesBySlug.get(product.categorySlug) ?? null
-          : product.categoryName ? categoriesByName.get(product.categoryName.toLowerCase()) ?? null : null;
-      const result = await createImportedProduct({ ...product, categoryId });
+        : product.categorySlug ? categoriesBySlug.get(product.categorySlug) ?? resolveCategoryId(product, categories)
+          : resolveCategoryId(product, categories);
+      const result = await createImportedProduct({
+        ...product,
+        categoryId,
+        shortDescription: product.shortDescription ?? product.description?.slice(0, 180) ?? null,
+        isFeatured: product.isFeatured ?? product.priority === true,
+        status,
+      });
       if (!result.ok || !result.id) {
         failures.push(`${product.name} : ${result.error ?? "création impossible"}`);
         continue;

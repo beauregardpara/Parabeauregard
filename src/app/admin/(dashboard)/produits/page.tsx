@@ -9,6 +9,7 @@ import { Clock3, Database, Eye, Plus, Search, Trash2, Upload } from "lucide-reac
 import { requireAdminPagePermission } from "@/lib/auth";
 import { foldForSearch } from "@/lib/product-name";
 import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
+import { AdminProductImport } from "@/components/admin-product-import";
 
 export default async function AdminProductsPage({
   searchParams,
@@ -60,7 +61,7 @@ export default async function AdminProductsPage({
     db.product.count({ where }),
     db.product.groupBy({ by: ["sourceName"] }),
     db.product.findMany({ where: { brand: { not: null } }, distinct: ["brand"], select: { brand: true }, orderBy: { brand: "asc" } }),
-    db.category.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    db.category.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, slug: true } }),
   ]);
 
   const pages = Math.ceil(total / perPage);
@@ -86,6 +87,7 @@ export default async function AdminProductsPage({
         action={
           <div className="flex flex-wrap justify-end gap-2">
           <Link href="/admin/produits/nouveau" className="btn-3d inline-flex items-center gap-1.5 rounded-xl bg-para-800 px-4 py-2 text-sm font-bold text-white hover:bg-para-900"><Plus size={15} aria-hidden /> Ajouter un produit</Link>
+          <AdminProductImport categories={categories.map(({ id, name, slug }) => ({ id, name, slug }))} />
           <form action="/admin/produits" className="flex gap-2">
             <input name="q" placeholder="Rechercher un produit…" defaultValue={sp.q}
               className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:border-para-400" />

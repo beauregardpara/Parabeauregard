@@ -1,0 +1,25 @@
+{
+  "products": [
+    {
+      "name": "Crème hydratante exemple",
+      "slug": "creme-hydratante-exemple",
+      "sku": "EXEMPLE-001",
+      "barcode": "611000000001",
+      "brand": "Marque Exemple",
+      "categoryName": "Visage",
+      "shortDescription": "Hydratation quotidienne pour la peau.",
+      "description": "Description complète du produit, conseils de présentation et informations utiles.",
+      "price": 129.9,
+      "promoPrice": 109.9,
+      "stock": 25,
+      "lowStockThreshold": 3,
+      "unlimitedStock": false,
+      "isFeatured": false,
+      "isNew": true,
+      "status": "PENDING_REVIEW",
+      "images": [
+        "images/creme-hydratante-exemple.webp"
+      ]
+    }
+  ]
+}

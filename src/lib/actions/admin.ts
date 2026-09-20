@@ -249,6 +249,55 @@ export async function createProduct(formData: FormData): Promise<{ ok: boolean; 
   }
 }
 
+/** Création depuis l'import catalogue : le fichier reste soumis aux mêmes
+ * validations que le formulaire manuel, avec quelques champs catalogue en plus. */
+export async function createImportedProduct(input: {
+  name: string;
+  slug?: string;
+  sku?: string | null;
+  barcode?: string | null;
+  brand?: string | null;
+  categoryId?: number | null;
+  shortDescription?: string | null;
+  description?: string | null;
+  price: number;
+  promoPrice?: number | null;
+  stock?: number;
+  lowStockThreshold?: number;
+  unlimitedStock?: boolean;
+  isFeatured?: boolean;
+  isNew?: boolean;
+  status?: "PENDING_REVIEW" | "PUBLISHED" | "HIDDEN";
+}): Promise<{ ok: boolean; id?: number; error?: string }> {
+  await requireRole("SUPER_ADMIN", "CATALOG_MANAGER");
+  const formData = new FormData();
+  for (const [key, value] of Object.entries({
+    name: input.name,
+    slug: input.slug ?? "",
+    sku: input.sku ?? "",
+    brand: input.brand ?? "",
+    categoryId: input.categoryId ?? "",
+    shortDescription: input.shortDescription ?? "",
+    description: input.description ?? "",
+    price: input.price,
+    promoPrice: input.promoPrice ?? "",
+    stock: input.stock ?? 0,
+    lowStockThreshold: input.lowStockThreshold ?? 3,
+    unlimitedStock: input.unlimitedStock ? "on" : "",
+    isFeatured: input.isFeatured ? "on" : "",
+    status: input.status ?? "PENDING_REVIEW",
+  })) formData.set(key, String(value));
+
+  const result = await createProduct(formData);
+  if (!result.ok || !result.id) return result;
+  await db.product.update({
+    where: { id: result.id },
+    data: { barcode: input.barcode?.trim() || null, isNew: input.isNew === true },
+  });
+  revalidatePath(`/admin/produits/${result.id}`);
+  return result;
+}
+
 export async function saveProductEdits(formData: FormData): Promise<{ ok: boolean; id?: number; error?: string }> {
   await requireRole("SUPER_ADMIN", "CATALOG_MANAGER");
   const id = Number(formData.get("id"));

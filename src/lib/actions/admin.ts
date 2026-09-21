@@ -153,11 +153,21 @@ export async function bulkProductAction(formData: FormData) {
     case "pending":
       await db.product.updateMany({ where: { id: { in: ids } }, data: { status: "PENDING_REVIEW" } });
       break;
-    case "delete":
-      // L’action de masse est volontairement non destructive : les commandes
-      // historiques doivent continuer à référencer leurs articles.
+    case "archive":
       await db.product.updateMany({ where: { id: { in: ids } }, data: { status: "HIDDEN" } });
       break;
+    case "delete": {
+      await requireRole("SUPER_ADMIN");
+      const products = await db.product.findMany({ where: { id: { in: ids } }, include: { images: true } });
+      for (const product of products) {
+        for (const image of product.images) {
+          const storage = await deleteSupabaseProductImage(image.url, product.id);
+          if (!storage.ok) throw new Error(storage.error);
+        }
+      }
+      await db.product.deleteMany({ where: { id: { in: ids } } });
+      break;
+    }
   }
   await logAction(`Action masse : ${bulkAction}`, "Product", undefined, `${ids.length} produits`);
   revalidatePath("/admin/produits");

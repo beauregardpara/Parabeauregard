@@ -155,7 +155,7 @@ export const productStatusSchema = z.object({
 
 export const bulkProductSchema = z.object({
   ids: z.array(z.number().int().positive()).min(1, "Aucun produit sélectionné."),
-  bulkAction: z.enum(["publish", "hide", "pending", "delete"]),
+  bulkAction: z.enum(["publish", "hide", "pending", "archive", "delete"]),
 });
 
 // ── Retours client ──────────────────────────────────────────────

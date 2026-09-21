@@ -10,6 +10,7 @@ import { requireAdminPagePermission } from "@/lib/auth";
 import { foldForSearch } from "@/lib/product-name";
 import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
 import { AdminProductImport } from "@/components/admin-product-import";
+import { BulkDeleteProductButton, SelectAllPageCheckbox } from "@/components/admin-product-selection";
 
 export default async function AdminProductsPage({
   searchParams,
@@ -132,17 +133,19 @@ export default async function AdminProductsPage({
         <form action={bulkProductAction}>
           <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-mint/60 p-3 text-sm">
             <span className="text-xs font-bold uppercase tracking-wide text-slate-400">Sélection →</span>
+            <SelectAllPageCheckbox count={products.length} />
             {[
               { action: "publish", label: "Publier", Icon: Upload },
               { action: "hide", label: "Masquer", Icon: Eye },
               { action: "pending", label: "À valider", Icon: Clock3 },
-                { action: "delete", label: "Archiver", Icon: Trash2 },
+              { action: "archive", label: "Archiver", Icon: Trash2 },
             ].map(({ action, label, Icon }) => (
               <button key={action} type="submit" name="bulkAction" value={action}
                 className="btn-3d rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-white/70">
                 <span className="inline-flex items-center gap-1.5"><Icon size={13} aria-hidden />{label}</span>
               </button>
             ))}
+            <BulkDeleteProductButton />
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">

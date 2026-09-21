@@ -120,15 +120,14 @@ export function AdminProductImport({ categories }: { categories: Category[] }) {
     const categoriesById = new Map(categories.map((category) => [category.id, category.id]));
     const categoriesBySlug = new Map(categories.map((category) => [category.slug, category.id]));
 
-    for (const [index, product] of products.entries()) {
+    const processProduct = async (product: ImportedProduct, index: number) => {
+      const productFailures: string[] = [];
       if (!product.name || typeof product.price !== "number") {
-        failures.push(`Produit ${index + 1} : nom ou prix manquant.`);
-        continue;
+        return { created: 0, photos: 0, failures: [`Produit ${index + 1} : nom ou prix manquant.`] };
       }
       const status = normalizeStatus(product.status);
       if (!status) {
-        failures.push(`${product.name} : statut inconnu (${product.status}).`);
-        continue;
+        return { created: 0, photos: 0, failures: [`${product.name} : statut inconnu (${product.status}).`] };
       }
       const categoryId = product.categoryId && categoriesById.get(product.categoryId)
         ? product.categoryId
@@ -142,31 +141,44 @@ export function AdminProductImport({ categories }: { categories: Category[] }) {
         status,
       });
       if (!result.ok || !result.id) {
-        failures.push(`${product.name} : ${result.error ?? "création impossible"}`);
-        continue;
+        return { created: 0, photos: 0, failures: [`${product.name} : ${result.error ?? "création impossible"}`] };
       }
-      created += 1;
+      let productPhotos = 0;
       for (const image of (product.images ?? []).slice(0, 12)) {
         const path = imagePath(image);
         const bytes = findZipFile(files, path);
         if (!bytes) {
-          failures.push(`${product.name} : image introuvable (${path}).`);
+          productFailures.push(`${product.name} : image introuvable (${path}).`);
           continue;
         }
         const copiedBytes = new Uint8Array(bytes);
         const original = new File([copiedBytes.buffer as ArrayBuffer], path.split("/").pop() || "image.webp", { type: imageType(path) });
         const compressed = await compressProductImage(original);
         if (compressed.size > MAX_UPLOAD_BYTES) {
-          failures.push(`${product.name} : image trop lourde (${path}).`);
+          productFailures.push(`${product.name} : image trop lourde (${path}).`);
           continue;
         }
         const data = new FormData();
         data.set("productId", String(result.id));
         data.set("file", compressed);
         const uploaded = await uploadProductImageAction(data).catch(() => ({ ok: false as const }));
-        if (uploaded.ok) photos += 1;
-        else failures.push(`${product.name} : échec de l’image ${path}.`);
+        if (uploaded.ok) productPhotos += 1;
+        else productFailures.push(`${product.name} : échec de l’image ${path}.`);
       }
+      return { created: 1, photos: productPhotos, failures: productFailures };
+    };
+
+    // Plusieurs créations en parallèle réduisent fortement le temps d’un import,
+    // tout en limitant la pression sur PostgreSQL et Supabase.
+    const batchSize = 6;
+    for (let start = 0; start < products.length; start += batchSize) {
+      const batch = await Promise.all(products.slice(start, start + batchSize).map((product, offset) => processProduct(product, start + offset)));
+      for (const result of batch) {
+        created += result.created;
+        photos += result.photos;
+        failures.push(...result.failures);
+      }
+      setMessage(`Import en cours… ${Math.min(start + batchSize, products.length)}/${products.length} produit(s) traité(s).`);
     }
     setMessage(`${created} produit(s) créé(s), ${photos} photo(s) importée(s).${failures.length ? ` ${failures.length} problème(s) à vérifier.` : ""}`);
     if (failures.length) setError(failures.slice(0, 8).join("\n"));

@@ -3,33 +3,51 @@ import { expect, test } from "@playwright/test";
 /**
  * Choix du nombre de produits par page, côté boutique.
  *
- * Le catalogue de test compte plus de 800 produits publiés : « Tout » doit donc
- * en afficher nettement plus qu'une page standard, et une valeur fantaisiste
- * dans l'URL ne doit pas permettre de réclamer une page démesurée.
+ * Les effectifs sont lus dans la page (libellé « Tout (N) ») plutôt que codés en
+ * dur : le catalogue de démonstration est bien plus petit que celui en ligne, et
+ * un test qui suppose 800 produits échouerait sans qu'aucune régression existe.
  */
 const cartes = "a[href^='/produits/']";
 
+/** Nombre de fiches distinctes : une carte peut porter plusieurs liens vers le même produit. */
+async function fiches(page: import("@playwright/test").Page) {
+  const hrefs = await page.locator(cartes).evaluateAll((els) =>
+    els.map((el) => (el as HTMLAnchorElement).getAttribute("href") ?? "")
+  );
+  return new Set(hrefs).size;
+}
+
+/** Effectif total annoncé par l'option « Tout (N) ». */
+async function totalAnnonce(page: import("@playwright/test").Page) {
+  const libelle = await page.getByRole("link", { name: /^Tout \(\d+\)$/ }).innerText();
+  return Number(libelle.replace(/\D+/g, ""));
+}
+
 test.describe("Boutique — produits par page", () => {
   test("le sélecteur change réellement le nombre de produits affichés", async ({ page }) => {
-    await page.goto("/recherche?q=soin&parPage=12");
+    await page.goto("/recherche?parPage=12");
     await page.waitForLoadState("networkidle");
-    const douze = await page.locator(cartes).count();
-    expect(douze).toBeGreaterThan(0);
-    expect(douze).toBeLessThanOrEqual(12 * 2); // marge : une carte peut porter plusieurs liens
+
+    const total = await totalAnnonce(page);
+    test.skip(total <= 12, `catalogue de test trop petit (${total} produits)`);
+
+    const douze = await fiches(page);
+    expect(douze).toBe(Math.min(12, total));
 
     await page.getByRole("link", { name: "48", exact: true }).click();
     await page.waitForLoadState("networkidle");
     expect(new URL(page.url()).searchParams.get("parPage")).toBe("48");
-    const quaranteHuit = await page.locator(cartes).count();
-    expect(quaranteHuit).toBeGreaterThan(douze);
+    expect(await fiches(page)).toBe(Math.min(48, total));
+    expect(await fiches(page)).toBeGreaterThan(douze);
   });
 
   test("« Tout » affiche l'ensemble du catalogue filtré", async ({ page }) => {
-    await page.goto("/recherche?q=soin&parPage=tout");
+    await page.goto("/recherche?parPage=tout");
     await page.waitForLoadState("networkidle");
+
     await expect(page.getByRole("link", { name: /^Tout \(\d+\)$/ })).toHaveAttribute("aria-current", "true");
-    // Plus d'une page standard, et aucune pagination puisque tout tient sur une page.
-    expect(await page.locator(cartes).count()).toBeGreaterThan(96);
+    // Tout tient sur une seule page : la pagination n'a plus lieu d'être.
+    expect(await fiches(page)).toBe(await totalAnnonce(page));
     await expect(page.getByRole("navigation", { name: "Pagination" })).toHaveCount(0);
   });
 

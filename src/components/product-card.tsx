@@ -94,7 +94,7 @@ export function ProductCard({ p }: { p: ProductCardData }) {
           <span className={`rounded-full px-2.5 py-0.5 font-display text-lg font-extrabold ${discount !== null ? "bg-coral-50 text-coral-600" : "bg-para-50 text-para-800"}`}>
             {formatPrice(p.promoPrice ?? p.price)}
           </span>
-          {discount !== null && <span className="text-sm text-slate-400 line-through">{formatPrice(p.price)}</span>}
+          {discount !== null && <span className="text-sm text-slate-500 line-through">{formatPrice(p.price)}</span>}
         </div>
 
         {lowStock && <p className="text-[11px] font-semibold text-coral-600">⚡ Plus que {p.stock} en stock</p>}

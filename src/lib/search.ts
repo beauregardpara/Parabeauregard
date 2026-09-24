@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { cachedCatalogue } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { searchTermsForQuery } from "@/lib/search/synonyms";
 import { foldForSearch } from "@/lib/product-name";
@@ -26,7 +27,7 @@ export async function getCategoryWithDescendants(categorySlug: string) {
   return [cat, ...cat.children];
 }
 
-export async function searchProducts(filters: ProductFilters) {
+async function searchProductsUncached(filters: ProductFilters) {
   const page = Math.max(1, filters.page ?? 1);
   const perPage = filters.perPage ?? 12;
 
@@ -144,7 +145,7 @@ export async function searchProducts(filters: ProductFilters) {
   };
 }
 
-export async function getBrands(): Promise<string[]> {
+async function getBrandsUncached(): Promise<string[]> {
   const rows = await db.product.findMany({
     where: { status: "PUBLISHED", brand: { not: null } },
     select: { brand: true },
@@ -164,3 +165,11 @@ export async function getProductBySlug(slug: string) {
     },
   });
 }
+
+/**
+ * Versions mises en cache (invalidées à chaque modification de produit).
+ * Les filtres font partie de la clé : deux recherches différentes ne partagent
+ * jamais leur résultat.
+ */
+export const searchProducts = cachedCatalogue(searchProductsUncached, ["search-products"]);
+export const getBrands = cachedCatalogue(getBrandsUncached, ["brands"]);

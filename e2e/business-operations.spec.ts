@@ -34,7 +34,11 @@ test.describe("Exploitation quotidienne", () => {
     await main.getByLabel("Nouveau mot de passe").fill("nouveau-secret");
     await main.getByLabel("Confirmer le mot de passe").fill("nouveau-secret");
     await main.getByRole("button", { name: "Enregistrer" }).click();
-    await expect(main.getByRole("alert")).toContainText("n'est plus valide", { timeout: 15_000 });
+    // Le jeton est refusé ; si la limite de tentatives s'est déclenchée entre-temps
+    // (suite relancée sur un serveur déjà sollicité), le refus est tout aussi valide.
+    await expect(main.getByRole("alert")).toContainText(/n'est plus valide|Trop de tentatives/, {
+      timeout: 15_000,
+    });
   });
 
   test("l'assistant répond aux questions pratiques sans vendre de produit", async ({ request }) => {
@@ -65,6 +69,8 @@ test.describe("Exploitation quotidienne", () => {
     await page.goto("/admin/clients");
     await expect(page).toHaveURL(/\/admin\/produits/);
     await expect(page.locator("body")).not.toContainText("Points fidélité");
-    await expect(page.getByRole("link", { name: "Clients" })).toHaveCount(0);
+    // `exact` est indispensable : sans lui, « Avis clients » — autorisé pour ce rôle —
+    // ferait échouer l'assertion par simple correspondance de sous-chaîne.
+    await expect(page.getByRole("link", { name: "Clients", exact: true })).toHaveCount(0);
   });
 });

@@ -20,7 +20,7 @@ export default function SuiviCommandePage() {
 
         <SearchRedirectForm />
 
-        <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-center text-xs text-slate-400">
+        <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-center text-xs text-slate-500">
           <p>
             « Je n'ai plus mon jeton » ? Connectez-vous à votre compte pour retrouver vos commandes, ou contactez-nous via le{" "}
             <Link href="/contact" className="font-semibold text-para-600 hover:underline">formulaire de contact</Link>.

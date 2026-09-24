@@ -195,7 +195,7 @@ export function ChatWidget() {
               aria-label="Envoyer"><Send size={16} /></button>
           </form>
           {/* Mention obligatoire en contexte parapharmacie. */}
-          <p className="mt-2 text-center text-[11px] leading-snug text-slate-400">
+          <p className="mt-2 text-center text-[11px] leading-snug text-slate-500">
             Les recommandations proposées ne remplacent pas l&apos;avis d&apos;un professionnel de santé.
           </p>
         </div>

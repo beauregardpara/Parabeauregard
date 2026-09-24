@@ -252,7 +252,7 @@ export default function CheckoutPage() {
               className="btn-shine btn-3d mt-4 w-full rounded-full bg-gradient-to-r from-para-500 to-para-700 py-3.5 font-bold text-white shadow-lift disabled:opacity-60">
               {pending ? "Traitement…" : `Confirmer la commande — ${formatPrice(totalDisplay)}`}
             </button>
-            <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-400">
+            <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-500">
               En validant, vous acceptez nos <Link href="/cgv" className="underline">CGV</Link>.
               Vos données sont protégées conformément à la loi 09-08.
             </p>

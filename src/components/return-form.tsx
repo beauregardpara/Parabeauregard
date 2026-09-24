@@ -25,7 +25,7 @@ export function ReturnRequestForm() {
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-3">
       <div>
-        <label htmlFor="retour-ref" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">Référence de la commande</label>
+        <label htmlFor="retour-ref" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Référence de la commande</label>
         <input
           id="retour-ref"
           name="reference"
@@ -36,12 +36,12 @@ export function ReturnRequestForm() {
         />
       </div>
       <div>
-        <label htmlFor="retour-email" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">Email de la commande</label>
+        <label htmlFor="retour-email" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Email de la commande</label>
         <input id="retour-email" name="email" type="email" required placeholder="vous@exemple.ma"
           className="w-full rounded-2xl border border-para-100 bg-white px-4 py-3 text-sm outline-none ring-para-200 transition focus:ring-2" />
       </div>
       <div>
-        <label htmlFor="retour-reason" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">Raison du retour</label>
+        <label htmlFor="retour-reason" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Raison du retour</label>
         <select id="retour-reason" name="reason" required
           className="w-full rounded-2xl border border-para-100 bg-white px-4 py-3 text-sm outline-none ring-para-200 transition focus:ring-2">
           <option value="">Choisir…</option>
@@ -53,7 +53,7 @@ export function ReturnRequestForm() {
         </select>
       </div>
       <div>
-        <label htmlFor="retour-details" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">Précisions (optionnel)</label>
+        <label htmlFor="retour-details" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Précisions (optionnel)</label>
         <textarea id="retour-details" name="details" rows={3} maxLength={2000} placeholder="Décrivez le problème constaté…"
           className="w-full rounded-2xl border border-para-100 bg-white px-4 py-3 text-sm outline-none ring-para-200 transition focus:ring-2" />
       </div>

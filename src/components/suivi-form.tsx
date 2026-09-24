@@ -33,7 +33,7 @@ export function SearchRedirectForm() {
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-3">
       <div>
-        <label htmlFor="suivi-ref" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">
+        <label htmlFor="suivi-ref" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">
           Référence
         </label>
         <input
@@ -46,7 +46,7 @@ export function SearchRedirectForm() {
         />
       </div>
       <div>
-        <label htmlFor="suivi-token" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">
+        <label htmlFor="suivi-token" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">
           Jeton de suivi
         </label>
         <input

@@ -47,7 +47,7 @@ export function CartClient() {
                   <span className="w-9 text-center text-sm font-bold">{i.qty}</span>
                   <button onClick={() => cart.setQty(i.productId, i.qty + 1)} aria-label="Augmenter la quantité"
                     className="btn-3d h-8 w-8 rounded-full border border-para-200 font-bold text-para-700 hover:bg-mint">+</button>
-                  <button onClick={() => cart.remove(i.productId)} className="ml-auto text-xs text-slate-400 transition hover:text-red-500">
+                  <button onClick={() => cart.remove(i.productId)} className="ml-auto text-xs text-slate-500 transition hover:text-red-500">
                     Supprimer
                   </button>
                 </div>
@@ -69,7 +69,7 @@ export function CartClient() {
               className="btn-shine btn-3d mt-5 block rounded-full bg-gradient-to-r from-para-500 to-para-700 py-3.5 text-center font-bold text-white shadow-lift">
               Commander →
             </Link>
-            <p className="mt-3 text-center text-[11px] text-slate-400">Paiement à la livraison · Livraison gratuite dès 500 DH · Retours sous 7 jours</p>
+            <p className="mt-3 text-center text-[11px] text-slate-500">Paiement à la livraison · Livraison gratuite dès 500 DH · Retours sous 7 jours</p>
           </div>
         </aside>
       </div>

@@ -14,7 +14,7 @@ export function FavoritesSection() {
     <section className="mt-8 rounded-3xl border border-para-100 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-para-50 px-6 py-4">
         <h2 className="font-display text-lg font-bold text-para-900">
-          Mes favoris <span className="text-slate-400">({list.length})</span>
+          Mes favoris <span className="text-slate-500">({list.length})</span>
         </h2>
         <button onClick={clear} className="text-xs font-semibold text-red-500 hover:underline">
           Tout vider
@@ -30,7 +30,7 @@ export function FavoritesSection() {
               <Link href={`/produits/${f.slug}`} className="font-bold text-para-800 hover:underline">
                 {f.name}
               </Link>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 {f.brand ?? ""}
                 {f.rating ? ` · ${f.rating.toFixed(1)}/5` : ""}
               </p>
@@ -46,7 +46,7 @@ export function FavoritesSection() {
               <button
                 onClick={() => remove(f.productId)}
                 aria-label={`Retirer ${f.name} des favoris`}
-                className="rounded-full border border-para-200 p-2 text-slate-400 transition hover:border-red-300 hover:text-red-500"
+                className="rounded-full border border-para-200 p-2 text-slate-500 transition hover:border-red-300 hover:text-red-500"
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                   <path strokeLinecap="round" d="M6 18 18 6M6 6l12 12" />

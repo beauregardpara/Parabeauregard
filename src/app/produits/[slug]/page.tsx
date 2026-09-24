@@ -192,7 +192,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <p className="flex items-center gap-2 font-semibold text-emerald-700">✓ En stock — expédié sous 24h</p>
               )
             ) : (
-              <p className="font-semibold text-slate-400">✕ Momentanément indisponible</p>
+              <p className="font-semibold text-slate-500">✕ Momentanément indisponible</p>
             )}
             <p className="text-slate-500">
               🚚 Livraison {DELIVERY_CASABLANCA_H} à Casablanca, {DELIVERY_OTHER_H} ailleurs · offerte dès{" "}
@@ -226,7 +226,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
 
           {(p.sku || p.barcode) && (
-            <p className="mt-5 text-xs text-slate-400">
+            <p className="mt-5 text-xs text-slate-500">
               Réf. {p.sku ?? "—"} {p.barcode ? `· EAN ${p.barcode}` : ""}
             </p>
           )}
@@ -245,7 +245,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         {p.reviews.length > 0 && <aside id="avis" className="space-y-4">
           <h2 className="font-display text-xl font-bold text-para-900">
-            Avis clients <span className="text-slate-400">({p.reviews.length})</span>
+            Avis clients <span className="text-slate-500">({p.reviews.length})</span>
           </h2>
           {[...p.reviews]
             .sort((a, b) => Number(b.verifiedPurchase) - Number(a.verifiedPurchase))

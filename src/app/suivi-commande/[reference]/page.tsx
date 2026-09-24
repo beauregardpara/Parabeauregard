@@ -85,7 +85,7 @@ export default async function SuiviCommandesDetailPage({
       <section className="mt-8 rounded-3xl border border-para-100 bg-white p-6 shadow-sm" aria-label="Historique des statuts">
         <h2 className="mb-5 font-display text-lg font-bold text-para-900">Historique</h2>
         {order.statusHistory.length === 0 ? (
-          <p className="text-sm text-slate-400">Aucun événement enregistré pour le moment.</p>
+          <p className="text-sm text-slate-500">Aucun événement enregistré pour le moment.</p>
         ) : (
           <ol className="relative space-y-6 border-l-2 border-para-100 pl-6">
             {order.statusHistory.map((h) => {
@@ -104,7 +104,7 @@ export default async function SuiviCommandesDetailPage({
                     <strong className={`text-sm ${isLatest ? "text-para-800" : "text-slate-600"}`}>
                       {STATUS_ICON[h.to] ?? ""} {statusLabel(h.to)}
                     </strong>
-                    <time className="text-xs text-slate-400">{formatDate(h.createdAt)}</time>
+                    <time className="text-xs text-slate-500">{formatDate(h.createdAt)}</time>
                   </div>
                   {h.note && <p className="mt-0.5 text-xs text-slate-500">{h.note}</p>}
                 </li>
@@ -121,7 +121,7 @@ export default async function SuiviCommandesDetailPage({
           {order.items.map((i) => (
             <li key={i.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
               <Link href={`/produits/${i.productSlug}`} className="min-w-0 flex-1 truncate hover:text-para-700">
-                {i.productName} <span className="text-slate-400">× {i.quantity}</span>
+                {i.productName} <span className="text-slate-500">× {i.quantity}</span>
               </Link>
               <strong>{formatPrice(i.unitPrice * i.quantity)}</strong>
             </li>
@@ -137,7 +137,7 @@ export default async function SuiviCommandesDetailPage({
           <div className="flex justify-between"><dt className="text-slate-500">Livraison</dt><dd>{order.shippingCost === 0 ? "Gratuite" : formatPrice(order.shippingCost)}</dd></div>
           <div className="flex justify-between pt-1.5 text-base font-extrabold text-para-900"><dt>Total</dt><dd>{formatPrice(order.total)}</dd></div>
         </dl>
-        <p className="mt-4 rounded-2xl bg-slate-50 p-3 text-center text-xs text-slate-400">
+        <p className="mt-4 rounded-2xl bg-slate-50 p-3 text-center text-xs text-slate-500">
           Paiement à la livraison : {order.paid ? "encaissé ✅" : "à régler au livreur (espèces)"}
         </p>
       </section>

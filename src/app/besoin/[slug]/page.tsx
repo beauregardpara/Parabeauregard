@@ -53,7 +53,7 @@ export default async function NeedPage({
         <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-para-500">{need.tagline}</p>
         <h1 className="mt-1 font-display text-3xl font-extrabold text-para-950 sm:text-4xl">{need.title}</h1>
         <p className="mt-2 max-w-2xl leading-relaxed text-slate-600">{need.description}</p>
-        <p className="mt-2 text-sm text-slate-400">{result.total} produit(s)</p>
+        <p className="mt-2 text-sm text-slate-500">{result.total} produit(s)</p>
       </header>
 
       {result.items.length === 0 ? (

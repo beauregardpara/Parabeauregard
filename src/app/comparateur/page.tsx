@@ -154,7 +154,7 @@ export default function ComparePage() {
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-para-100">
-                <th className="w-40 p-4 text-left align-bottom text-xs font-bold uppercase tracking-wide text-slate-400">
+                <th className="w-40 p-4 text-left align-bottom text-xs font-bold uppercase tracking-wide text-slate-500">
                   {items.length} produit(s)
                 </th>
                 {products.map((p) => (
@@ -166,7 +166,7 @@ export default function ComparePage() {
                       <Link href={`/produits/${p.slug}`} className="line-clamp-2 font-semibold text-para-900 hover:text-para-700">
                         {p.name}
                       </Link>
-                      <button onClick={() => remove(p.id)} className="mx-auto text-[11px] font-semibold text-slate-400 hover:text-coral-600">
+                      <button onClick={() => remove(p.id)} className="mx-auto text-[11px] font-semibold text-slate-500 hover:text-coral-600">
                         ✕ Retirer
                       </button>
                     </div>
@@ -193,7 +193,7 @@ export default function ComparePage() {
       {products.length >= 2 && (
         <div className="mt-8 flex flex-wrap items-end gap-3 rounded-3xl border border-para-100 bg-white p-4 shadow-sm">
           <div className="min-w-[220px] flex-1">
-            <label htmlFor="ai-note" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">
+            <label htmlFor="ai-note" className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">
               Précision pour l'analyse (optionnel)
             </label>
             <input
@@ -234,7 +234,7 @@ export default function ComparePage() {
             <table className="w-full min-w-[720px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-para-100">
-                  <th className="w-40 p-4 text-left align-bottom text-xs font-bold uppercase tracking-wide text-slate-400">
+                  <th className="w-40 p-4 text-left align-bottom text-xs font-bold uppercase tracking-wide text-slate-500">
                     {aiData.products.length} produit(s)
                   </th>
                   {aiData.products.map((p) => (
@@ -277,7 +277,7 @@ export default function ComparePage() {
           </div>
 
           <div className="mt-4 rounded-3xl border border-para-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Verdict</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Verdict</p>
             <p className="mt-1.5 leading-relaxed text-slate-700">{aiData.ai.verdict}</p>
             <ul className="mt-4 space-y-3">
               {aiData.ai.summaries.map((s) => {

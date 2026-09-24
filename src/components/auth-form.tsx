@@ -67,13 +67,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               onClick={() => setShowPassword((v) => !v)}
               aria-pressed={showPassword}
               aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-              className="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-xl text-slate-400 transition hover:text-para-700 focus-visible:text-para-700"
+              className="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-xl text-slate-500 transition hover:text-para-700 focus-visible:text-para-700"
             >
               <span aria-hidden>{showPassword ? "🙈" : "👁"}</span>
             </button>
           </div>
           {mode === "register" && (
-            <p className="px-1 text-xs text-slate-400">6 caractères minimum.</p>
+            <p className="px-1 text-xs text-slate-500">6 caractères minimum.</p>
           )}
           {error && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-600">{error}</p>}
           <button type="submit" disabled={pending}

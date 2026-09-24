@@ -73,7 +73,7 @@ export default async function AccountPage() {
           ["Membre depuis", formatDate(customer.createdAt).slice(0, 12)],
         ] as const).map(([label, value]) => (
           <div key={String(label)} className="rounded-2xl border border-para-100 bg-gradient-to-br from-white to-mint p-5 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
             <p className="mt-1 font-display text-xl font-extrabold text-para-800">{value}</p>
           </div>
         ))}
@@ -107,7 +107,7 @@ export default async function AccountPage() {
                   <Link href={`/commande/${o.reference}`} className="font-bold text-para-800 hover:underline">
                     {o.reference}
                   </Link>
-                  <p className="text-xs text-slate-400">{formatDate(o.createdAt)} · {o.items.length} article(s)</p>
+                  <p className="text-xs text-slate-500">{formatDate(o.createdAt)} · {o.items.length} article(s)</p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-bold ${STATUS_STYLES[o.status]}`}>
                   {STATUS_LABELS[o.status]}

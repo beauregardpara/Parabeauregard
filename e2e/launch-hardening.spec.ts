@@ -37,9 +37,12 @@ test.describe("Lancement — honnêteté et sécurité", () => {
     const slug = "guinot-longue-vie-creme-jeunesse-revitalisante-visage-homme-50-ml";
     const real = await page.request.get(`/produits/${slug}`);
     expect(real.status()).toBe(200);
-    const realHead = (await real.text()).split("</head>")[0];
-    expect(realHead).not.toMatch(/<meta name="robots"[^>]*noindex/);
-    expect(realHead).toMatch(/<link rel="canonical"/);
+    // Document entier : Next.js peut diffuser les métadonnées après l'ouverture
+    // du <head>, un découpage sur </head> serait instable. Le payload RSC
+    // échappe ses balises (\"meta\"), il ne peut donc pas fausser ces motifs.
+    const realHtml = await real.text();
+    expect(realHtml).not.toMatch(/<meta name="robots"[^>]*noindex/);
+    expect(realHtml).toMatch(/<link rel="canonical"/);
   });
 
   test("la page de connexion admin n'affiche aucun identifiant", async ({ page }) => {
@@ -70,12 +73,18 @@ test.describe("Lancement — honnêteté et sécurité", () => {
     // On vérifie donc l'état final réellement attendu (le statut persisté),
     // ce qui est plus strict que la seule disparition du bouton.
     const cancelButton = page.getByRole("button", { name: "Annuler la commande de démonstration" });
-    if ((await cancelButton.count()) > 0) {
-      await cancelButton.click();
-      await expect(cancelButton).toHaveCount(0, { timeout: 45_000 });
-    }
-    await page.reload();
-    await expect(page.locator('select[name="status"]')).toHaveValue("CANCELLED");
+    if ((await cancelButton.count()) > 0) await cancelButton.click();
+    // On interroge l'état réellement enregistré plutôt que le rafraîchissement
+    // automatique de la page, qui peut tarder sous charge.
+    await expect
+      .poll(
+        async () => {
+          await page.reload();
+          return page.locator('select[name="status"]').inputValue();
+        },
+        { timeout: 20_000, message: "statut de la commande" }
+      )
+      .toBe("CANCELLED");
     await expect(page.getByRole("button", { name: "Annuler la commande de démonstration" })).toHaveCount(0);
   });
 });

@@ -24,6 +24,9 @@ const FIXTURE_IMAGE = "/images/premium/univers/face.webp";
 export const FIXTURE_SLUG = "guinot-longue-vie-creme-jeunesse-revitalisante-visage-homme-50-ml";
 export const HIDDEN_FIXTURE_SLUG = "ci-hidden-fixture-product";
 export const HIDDEN_FIXTURE_NAME = "CI Hidden Fixture Zephyrine";
+/** Lot dédié aux actions groupées : > 1 page de liste admin (25 par page). */
+export const BULK_FIXTURE_BRAND = "CIMassa";
+export const BULK_FIXTURE_COUNT = 30;
 
 async function main() {
   const products = await prisma.product.findMany({ select: { id: true, name: true, brand: true } });
@@ -84,6 +87,33 @@ async function main() {
   });
   await prisma.productImage.deleteMany({ where: { productId: hidden.id } });
   await prisma.productImage.create({ data: { productId: hidden.id, url: FIXTURE_IMAGE, alt: HIDDEN_FIXTURE_NAME, order: 0 } });
+
+  // Lot « actions groupées » : brouillons, donc jamais visibles côté boutique.
+  // Il en faut plus que 25 pour que la sélection dépasse la première page.
+  for (let i = 1; i <= BULK_FIXTURE_COUNT; i += 1) {
+    const bulkName = `${BULK_FIXTURE_BRAND} Produit Masse ${String(i).padStart(2, "0")}`;
+    const bulkSlug = `ci-masse-${String(i).padStart(2, "0")}`;
+    const bulkData = {
+      name: bulkName,
+      brand: BULK_FIXTURE_BRAND,
+      shortDescription: "Fiche de test des actions groupées.",
+      description: "Fiche de test des actions groupées.",
+      price: 100 + i,
+      status: "PENDING_REVIEW" as const,
+      stock: 5,
+      unlimitedStock: false,
+      categoryId: category?.id ?? null,
+      sourceName: "manuel",
+      searchText: buildSearchText([bulkName, BULK_FIXTURE_BRAND]),
+    };
+    const bulk = await prisma.product.upsert({
+      where: { slug: bulkSlug },
+      update: bulkData,
+      create: { ...bulkData, slug: bulkSlug, sku: `CI-MASSE-${String(i).padStart(3, "0")}` },
+    });
+    await prisma.productImage.deleteMany({ where: { productId: bulk.id } });
+    await prisma.productImage.create({ data: { productId: bulk.id, url: FIXTURE_IMAGE, alt: bulkName, order: 0 } });
+  }
 
   const published = await prisma.product.count({ where: { status: "PUBLISHED" } });
   console.log(JSON.stringify({ ok: true, products: products.length + 2, published, fixture: FIXTURE_SLUG }));

@@ -29,6 +29,8 @@ import { canCancelAsDemo } from "@/lib/demo-data";
 import { notifyStockAlerts } from "@/lib/product-alerts";
 import { slugify } from "@/lib/format";
 import { deleteSupabaseProductImage, uploadSupabaseProductImage } from "@/lib/storage/supabase-admin";
+import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
+import { ADMIN_PRODUCT_FILTER_KEYS, buildAdminProductWhere } from "@/lib/admin/product-filters";
 import { validateProductImage } from "@/lib/storage/file-validation";
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -136,12 +138,33 @@ export async function updateProductStatus(formData: FormData) {
 
 export async function bulkProductAction(formData: FormData) {
   await requireRole("SUPER_ADMIN", "CATALOG_MANAGER");
+  const expected = formData.get("expectedCount");
   const parsed = bulkProductSchema.safeParse({
     ids: formData.getAll("ids").map(Number).filter(Boolean),
     bulkAction: String(formData.get("bulkAction")),
+    scope: String(formData.get("scope") || "page"),
+    filters: Object.fromEntries(
+      ADMIN_PRODUCT_FILTER_KEYS.map((key) => [key, String(formData.get(`filtre_${key}`) ?? "").trim()]).filter(
+        ([, value]) => value
+      )
+    ),
+    ...(expected != null && String(expected) !== "" ? { expectedCount: Number(expected) } : {}),
   });
   if (!parsed.success) return;
-  const { ids, bulkAction } = parsed.data;
+  const { bulkAction, scope, filters, expectedCount } = parsed.data;
+
+  let ids = parsed.data.ids;
+  if (scope === "filtered") {
+    // On rejoue exactement le filtre de la liste : la sélection ne peut pas
+    // déborder sur des produits que l'utilisateur ne voyait pas.
+    const lowStockThreshold = (await getSettingNumber(SETTING_KEYS.lowStockAlerts)) || 3;
+    const where = buildAdminProductWhere(filters, lowStockThreshold);
+    const matching = await db.product.findMany({ where, select: { id: true } });
+    ids = matching.map((p) => p.id);
+    // La liste a pu changer depuis l'affichage : on refuse plutôt que d'agir à l'aveugle.
+    if (expectedCount != null && expectedCount !== ids.length) return;
+  }
+  if (ids.length === 0) return;
 
   switch (bulkAction) {
     case "publish":
@@ -169,7 +192,12 @@ export async function bulkProductAction(formData: FormData) {
       break;
     }
   }
-  await logAction(`Action masse : ${bulkAction}`, "Product", undefined, `${ids.length} produits`);
+  await logAction(
+    `Action masse : ${bulkAction}`,
+    "Product",
+    undefined,
+    `${ids.length} produits${scope === "filtered" ? " (tout le filtre)" : ""}`
+  );
   revalidatePath("/admin/produits");
 }
 

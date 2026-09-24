@@ -10,6 +10,7 @@ import { requireAdminPagePermission } from "@/lib/auth";
 import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
 import { AdminProductImport } from "@/components/admin-product-import";
 import { BulkActionButton, BulkDeleteProductButton, SelectAllPageCheckbox } from "@/components/admin-product-selection";
+import { ADMIN_PAGE_SIZES, pageSizeChoices, parsePageSize } from "@/lib/page-size";
 import {
   ADMIN_PRODUCT_FILTER_KEYS,
   buildAdminProductWhere,
@@ -19,7 +20,7 @@ import {
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ statut?: string; source?: string; q?: string; page?: string; marque?: string; categorie?: string; stock?: string; promo?: string; tri?: string }>;
+  searchParams: Promise<{ statut?: string; source?: string; q?: string; page?: string; marque?: string; categorie?: string; stock?: string; promo?: string; tri?: string; parPage?: string }>;
 }) {
   await requireAdminPagePermission("products:read");
   const sp = await searchParams;
@@ -27,8 +28,8 @@ export default async function AdminProductsPage({
   const filters = pickAdminProductFilters(sp);
   const where = buildAdminProductWhere(filters, lowStockThreshold);
 
-  const perPage = 25;
-  const page = Math.max(1, parseInt(sp.page ?? "1"));
+  const { perPage, isAll, param: perPageParam } = parsePageSize(sp.parPage, ADMIN_PAGE_SIZES, 25);
+  const page = isAll ? 1 : Math.max(1, parseInt(sp.page ?? "1"));
 
   const orderBy = sp.tri === "nom" ? { name: "asc" as const } : sp.tri === "prix" ? { price: "asc" as const } : sp.tri === "stock" ? { stock: "asc" as const } : sp.tri === "ancien" ? { createdAt: "asc" as const } : { updatedAt: "desc" as const };
   const [products, total, sources, brands, categories] = await Promise.all([
@@ -46,6 +47,16 @@ export default async function AdminProductsPage({
   ]);
 
   const pages = Math.ceil(total / perPage);
+  const choices = pageSizeChoices(ADMIN_PAGE_SIZES, total);
+  const qsPerPage = (value: string) => {
+    const p = new URLSearchParams();
+    Object.entries(sp).forEach(([k, v]) => {
+      if (k === "page" || k === "parPage" || !v) return;
+      p.set(k, String(v));
+    });
+    p.set("parPage", value);
+    return `/admin/produits?${p.toString()}`;
+  };
   const qs = (extra: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
     Object.entries({ ...sp, ...extra }).forEach(([k, v]) => v && p.set(k, v));
@@ -136,6 +147,26 @@ export default async function AdminProductsPage({
               />
             ))}
             <BulkDeleteProductButton />
+            <span className="ml-auto inline-flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+              Par page :
+              {isAll && total > 200 && (
+                <span className="text-[11px] text-amber-700">{total} lignes : chargement plus lent.</span>
+              )}
+              {choices.map((c) => (
+                <a
+                  key={c.param}
+                  href={qsPerPage(c.param)}
+                  aria-current={c.param === perPageParam ? "true" : undefined}
+                  className={`rounded-lg border px-2.5 py-1 font-semibold transition ${
+                    c.param === perPageParam
+                      ? "border-para-600 bg-para-700 text-white"
+                      : "border-slate-200 bg-white hover:bg-mint"
+                  }`}
+                >
+                  {c.label}
+                </a>
+              ))}
+            </span>
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">

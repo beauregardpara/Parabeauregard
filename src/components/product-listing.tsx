@@ -5,6 +5,7 @@ import { Filters } from "@/components/filters";
 import { ProductCard } from "@/components/product-card";
 import { RETURN_DAYS } from "@/lib/constants";
 import { paginationItems } from "@/lib/pagination";
+import { pageSizeChoices, parsePageSize, SHOP_PAGE_SIZES } from "@/lib/page-size";
 
 export type ListingParams = {
   marque?: string | string[];
@@ -15,6 +16,8 @@ export type ListingParams = {
   tri?: string;
   page?: string;
   q?: string;
+  /** Nombre de produits par page : une des valeurs proposées, ou « tout ». */
+  parPage?: string;
 };
 
 export async function ProductListing({
@@ -37,6 +40,7 @@ export async function ProductListing({
 }) {
   const sp = await searchParams;
   const brandsParam = Array.isArray(sp.marque) ? sp.marque : sp.marque ? [sp.marque] : [];
+  const { perPage, isAll, param: perPageParam } = parsePageSize(sp.parPage, SHOP_PAGE_SIZES, 12);
 
   const [result, allBrands] = await Promise.all([
     searchProducts({
@@ -49,7 +53,8 @@ export async function ProductListing({
       onSaleOnly: sp.promo === "1",
       onlyRecent,
       sort: (sp.tri as "recent" | "price-asc" | "price-desc" | "popular" | "name") ?? "recent",
-      page: sp.page ? parseInt(sp.page) : 1,
+      page: isAll ? 1 : sp.page ? parseInt(sp.page) : 1,
+      perPage,
     }),
     getBrands(),
   ]);
@@ -64,6 +69,19 @@ export async function ProductListing({
     p.set("page", String(page));
     return `${basePath}?${p.toString()}`;
   };
+
+  /** Lien changeant le nombre par page ; on repart de la première page. */
+  const qsPerPage = (value: string) => {
+    const p = new URLSearchParams();
+    Object.entries(sp).forEach(([k, v]) => {
+      if (k === "page" || k === "parPage" || v == null) return;
+      if (Array.isArray(v)) v.forEach((x) => p.append(k, x));
+      else p.set(k, String(v));
+    });
+    p.set("parPage", value);
+    return `${basePath}?${p.toString()}`;
+  };
+  const choices = pageSizeChoices(SHOP_PAGE_SIZES, result.total);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
@@ -110,6 +128,32 @@ export async function ProductListing({
             </div>
           ) : (
             <>
+              <div className="mb-4 flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
+                <span>Produits par page :</span>
+                {choices.map((c) => {
+                  const actif = c.param === perPageParam;
+                  return (
+                    <a
+                      key={c.param}
+                      href={qsPerPage(c.param)}
+                      aria-current={actif ? "true" : undefined}
+                      className={`rounded-full border px-3 py-1 font-semibold transition ${
+                        actif
+                          ? "border-para-600 bg-para-700 text-white"
+                          : "border-para-200 bg-white text-para-800 hover:bg-mint"
+                      }`}
+                    >
+                      {c.label}
+                    </a>
+                  );
+                })}
+              </div>
+              {isAll && result.total > 200 && (
+                <p className="mb-4 text-right text-[11px] text-slate-400">
+                  {result.total} produits chargés d’un coup : l’affichage peut être lent en mobile.
+                </p>
+              )}
+
               <div className="grid grid-cols-2 gap-5 md:grid-cols-3 xl:grid-cols-4">
                 {result.items.map((p) => (
                   <ProductCard key={p.id} p={p} />

@@ -153,10 +153,30 @@ export const productStatusSchema = z.object({
   status: z.enum(["PENDING_REVIEW", "PUBLISHED", "HIDDEN"]),
 });
 
-export const bulkProductSchema = z.object({
-  ids: z.array(z.number().int().positive()).min(1, "Aucun produit sélectionné."),
-  bulkAction: z.enum(["publish", "hide", "pending", "archive", "delete"]),
-});
+export const bulkProductSchema = z
+  .object({
+    ids: z.array(z.number().int().positive()),
+    bulkAction: z.enum(["publish", "hide", "pending", "archive", "delete"]),
+    /** "page" : les cases cochées. "filtered" : tous les produits du filtre courant. */
+    scope: z.enum(["page", "filtered"]).default("page"),
+    filters: z
+      .object({
+        statut: z.string().max(40).optional(),
+        source: z.string().max(120).optional(),
+        q: z.string().max(120).optional(),
+        marque: z.string().max(120).optional(),
+        categorie: z.string().max(20).optional(),
+        stock: z.string().max(20).optional(),
+        promo: z.string().max(10).optional(),
+      })
+      .default({}),
+    /** Garde-fou : nombre de produits que l'utilisateur a vu annoncé avant de confirmer. */
+    expectedCount: z.number().int().nonnegative().optional(),
+  })
+  .refine((v) => v.scope === "filtered" || v.ids.length > 0, {
+    message: "Aucun produit sélectionné.",
+    path: ["ids"],
+  });
 
 // ── Retours client ──────────────────────────────────────────────
 

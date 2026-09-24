@@ -7,10 +7,14 @@ import { bulkProductAction } from "@/lib/actions/admin";
 import { PageHeader } from "@/components/admin-shell";
 import { Clock3, Database, Eye, Plus, Search, Trash2, Upload } from "lucide-react";
 import { requireAdminPagePermission } from "@/lib/auth";
-import { foldForSearch } from "@/lib/product-name";
 import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
 import { AdminProductImport } from "@/components/admin-product-import";
 import { BulkDeleteProductButton, SelectAllPageCheckbox } from "@/components/admin-product-selection";
+import {
+  ADMIN_PRODUCT_FILTER_KEYS,
+  buildAdminProductWhere,
+  pickAdminProductFilters,
+} from "@/lib/admin/product-filters";
 
 export default async function AdminProductsPage({
   searchParams,
@@ -20,32 +24,8 @@ export default async function AdminProductsPage({
   await requireAdminPagePermission("products:read");
   const sp = await searchParams;
   const lowStockThreshold = (await getSettingNumber(SETTING_KEYS.lowStockAlerts)) || 3;
-  const where: Record<string, unknown> = {};
-  if (sp.statut === "RUPTURE") {
-    where.status = "PUBLISHED";
-    where.stock = 0;
-    where.unlimitedStock = false;
-  } else if (sp.statut) where.status = sp.statut;
-  if (sp.source) where.sourceName = sp.source;
-  if (sp.q) {
-    // PostgreSQL compare les LIKE en respectant la casse et les accents : on
-    // cherche aussi dans le texte replié (« avene » trouve « Avène »).
-    const q = sp.q.trim();
-    const folded = foldForSearch(q);
-    const id = /^\d+$/.test(q) ? Number(q) : null;
-    where.OR = [
-      ...(folded ? [{ searchText: { contains: folded } }, { slug: { contains: folded.replace(/\s+/g, "-") } }] : []),
-      { name: { contains: q } },
-      { sku: { contains: q } },
-      { brand: { contains: q } },
-      ...(id ? [{ id }] : []),
-    ];
-  }
-  if (sp.marque) where.brand = sp.marque;
-  if (sp.categorie) where.categoryId = Number(sp.categorie);
-  if (sp.stock === "faible") { where.stock = { lte: lowStockThreshold, gt: 0 }; where.unlimitedStock = false; }
-  if (sp.stock === "rupture") { where.stock = 0; where.unlimitedStock = false; }
-  if (sp.promo === "oui") where.promoPrice = { not: null };
+  const filters = pickAdminProductFilters(sp);
+  const where = buildAdminProductWhere(filters, lowStockThreshold);
 
   const perPage = 25;
   const page = Math.max(1, parseInt(sp.page ?? "1"));
@@ -131,9 +111,15 @@ export default async function AdminProductsPage({
       {/* Actions en masse + tableau dans le même formulaire */}
       {products.length > 0 ? (
         <form action={bulkProductAction}>
+          {/* Portée de la sélection : page affichée ou totalité du filtre. */}
+          <input type="hidden" name="scope" defaultValue="page" />
+          <input type="hidden" name="expectedCount" defaultValue="" />
+          {ADMIN_PRODUCT_FILTER_KEYS.map((key) =>
+            filters[key] ? <input key={key} type="hidden" name={`filtre_${key}`} value={filters[key]} /> : null
+          )}
           <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-mint/60 p-3 text-sm">
             <span className="text-xs font-bold uppercase tracking-wide text-slate-400">Sélection →</span>
-            <SelectAllPageCheckbox count={products.length} />
+            <SelectAllPageCheckbox count={products.length} total={total} />
             {[
               { action: "publish", label: "Publier", Icon: Upload },
               { action: "hide", label: "Masquer", Icon: Eye },

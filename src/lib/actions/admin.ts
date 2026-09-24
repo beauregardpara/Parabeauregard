@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import {
@@ -31,6 +31,7 @@ import { slugify } from "@/lib/format";
 import { deleteSupabaseProductImage, uploadSupabaseProductImage } from "@/lib/storage/supabase-admin";
 import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
 import { ADMIN_PRODUCT_FILTER_KEYS, buildAdminProductWhere } from "@/lib/admin/product-filters";
+import { CATALOGUE_TAG } from "@/lib/cache";
 import { validateProductImage } from "@/lib/storage/file-validation";
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -134,6 +135,9 @@ export async function updateProductStatus(formData: FormData) {
     String(id)
   );
   revalidatePath("/admin/produits");
+  // Le catalogue public est mis en cache : on l\'invalide pour que la
+  // boutique reflète la modification immédiatement.
+  revalidateTag(CATALOGUE_TAG);
 }
 
 export async function bulkProductAction(formData: FormData) {
@@ -199,6 +203,9 @@ export async function bulkProductAction(formData: FormData) {
     `${ids.length} produits${scope === "filtered" ? " (tout le filtre)" : ""}`
   );
   revalidatePath("/admin/produits");
+  // Le catalogue public est mis en cache : on l\'invalide pour que la
+  // boutique reflète la modification immédiatement.
+  revalidateTag(CATALOGUE_TAG);
 }
 
 function formText(formData: FormData, key: string): string | null {
@@ -281,6 +288,9 @@ export async function createProduct(formData: FormData): Promise<{ ok: boolean; 
     });
     await logAction("Création produit", "Product", String(product.id));
     revalidatePath("/admin/produits");
+    // Le catalogue public est mis en cache : on l\'invalide pour que la
+    // boutique reflète la modification immédiatement.
+    revalidateTag(CATALOGUE_TAG);
     return { ok: true, id: product.id };
   } catch {
     return { ok: false, error: "Impossible de créer le produit. Vérifiez le slug et la référence." };
@@ -333,6 +343,7 @@ export async function createImportedProduct(input: {
     data: { barcode: input.barcode?.trim() || null, isNew: input.isNew === true },
   });
   revalidatePath(`/admin/produits/${result.id}`);
+  revalidateTag(CATALOGUE_TAG);
   return result;
 }
 
@@ -387,6 +398,9 @@ export async function saveProductEdits(formData: FormData): Promise<{ ok: boolea
   }
   revalidatePath(`/admin/produits/${id}`);
   revalidatePath("/admin/produits");
+  // Le catalogue public est mis en cache : on l\'invalide pour que la
+  // boutique reflète la modification immédiatement.
+  revalidateTag(CATALOGUE_TAG);
   return { ok: true };
 }
 
@@ -414,6 +428,9 @@ export async function duplicateProduct(formData: FormData): Promise<void> {
   });
   await logAction("Duplication produit", "Product", String(copy.id), `source=${id}`);
   revalidatePath("/admin/produits");
+  // Le catalogue public est mis en cache : on l\'invalide pour que la
+  // boutique reflète la modification immédiatement.
+  revalidateTag(CATALOGUE_TAG);
   redirect(`/admin/produits/${copy.id}`);
 }
 
@@ -424,6 +441,9 @@ export async function archiveProduct(formData: FormData) {
   await logAction("Archivage produit", "Product", String(id));
   revalidatePath(`/admin/produits/${id}`);
   revalidatePath("/admin/produits");
+  // Le catalogue public est mis en cache : on l\'invalide pour que la
+  // boutique reflète la modification immédiatement.
+  revalidateTag(CATALOGUE_TAG);
 }
 
 export async function updateProductImagesAction(
@@ -457,6 +477,9 @@ export async function updateProductImagesAction(
   await logAction("Édition images produit", "Product", String(productId));
   revalidatePath(`/admin/produits/${productId}`);
   revalidatePath("/admin/produits");
+  // Le catalogue public est mis en cache : on l\'invalide pour que la
+  // boutique reflète la modification immédiatement.
+  revalidateTag(CATALOGUE_TAG);
   return { ok: true };
 }
 
@@ -481,6 +504,9 @@ export async function uploadProductImageAction(formData: FormData): Promise<{ ok
     await logAction("Ajout image produit", "Product", String(productId));
     revalidatePath(`/admin/produits/${productId}`);
     revalidatePath("/admin/produits");
+    // Le catalogue public est mis en cache : on l\'invalide pour que la
+    // boutique reflète la modification immédiatement.
+    revalidateTag(CATALOGUE_TAG);
     return { ok: true, url: upload.url };
   } catch {
     await deleteSupabaseProductImage(upload.url, productId);
@@ -501,6 +527,7 @@ export async function deleteProductImageAction(productId: number, imageId: numbe
   ]);
   await logAction("Suppression image produit", "ProductImage", String(image.id));
   revalidatePath(`/admin/produits/${productId}`);
+  revalidateTag(CATALOGUE_TAG);
   return { ok: true };
 }
 
@@ -510,6 +537,7 @@ export async function setPrimaryProductImageAction(productId: number, imageId: n
   if (!images.some((image) => image.id === imageId)) return { ok: false, error: "Image introuvable." };
   await db.$transaction(images.map((image, order) => db.productImage.update({ where: { id: image.id }, data: { order: image.id === imageId ? 0 : order < images.findIndex((item) => item.id === imageId) ? order + 1 : order } })));
   revalidatePath(`/admin/produits/${productId}`);
+  revalidateTag(CATALOGUE_TAG);
   return { ok: true };
 }
 
@@ -520,6 +548,7 @@ export async function reorderProductImagesAction(productId: number, imageIds: nu
   if (imageIds.length !== images.length || imageIds.some((id) => !allowed.has(id))) return { ok: false, error: "Ordre d’images invalide." };
   await db.$transaction(imageIds.map((id, order) => db.productImage.update({ where: { id }, data: { order } })));
   revalidatePath(`/admin/produits/${productId}`);
+  revalidateTag(CATALOGUE_TAG);
   return { ok: true };
 }
 
@@ -536,6 +565,9 @@ export async function deleteProduct(formData: FormData) {
   await db.product.delete({ where: { id } });
   await logAction("Suppression produit", "Product", String(id));
   revalidatePath("/admin/produits");
+  // Le catalogue public est mis en cache : on l\'invalide pour que la
+  // boutique reflète la modification immédiatement.
+  revalidateTag(CATALOGUE_TAG);
   redirect("/admin/produits");
 }
 
@@ -568,6 +600,7 @@ export async function saveCategory(formData: FormData) {
   }
   await logAction(idRaw ? "Édition catégorie" : "Création catégorie", "Category", idRaw || slug, name);
   revalidatePath("/admin/categories");
+  revalidateTag(CATALOGUE_TAG);
 }
 
 export async function deleteCategory(formData: FormData) {
@@ -577,6 +610,7 @@ export async function deleteCategory(formData: FormData) {
   await db.category.deleteMany({ where: { OR: [{ id }, { parentId: id }] } });
   await logAction("Suppression catégorie", "Category", String(id));
   revalidatePath("/admin/categories");
+  revalidateTag(CATALOGUE_TAG);
 }
 
 // ── Commandes (ORDER_MANAGER ou SUPER_ADMIN) ────────────────────

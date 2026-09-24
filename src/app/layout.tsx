@@ -17,6 +17,7 @@ import { syncFavoriteForCustomer } from "@/lib/actions/favorites";
 import { headers } from "next/headers";
 import { BUSINESS } from "@/config/business";
 import { SITE_URL } from "@/config/site";
+import { cachedCatalogue } from "@/lib/cache";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -36,12 +37,15 @@ export const metadata: Metadata = {
     siteName: "Para Beauregard",
     locale: "fr_MA",
     url: SITE_URL,
+    // Sans image, un lien partagé sur WhatsApp ou Facebook s'affiche sans visuel.
+    images: [{ url: "/og-default.jpg", width: 1200, height: 630, alt: "Para Beauregard — parapharmacie en ligne" }],
     title: "Para Beauregard — Parapharmacie en ligne au Maroc",
     description:
       "Parapharmacie en ligne marocaine : soins visage et corps, cheveux, solaire, bébé, hygiène et compléments alimentaires. Produits authentiques, paiement à la livraison partout au Maroc.",
   },
   twitter: {
     card: "summary_large_image",
+    images: ["/og-default.jpg"],
     title: "Para Beauregard — Parapharmacie en ligne au Maroc",
     description:
       "Parapharmacie en ligne marocaine : produits authentiques, paiement à la livraison partout au Maroc.",
@@ -54,7 +58,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-async function getNavCategories(): Promise<NavCategory[]> {
+const getNavCategories = cachedCatalogue(async function getNavCategoriesUncached(): Promise<NavCategory[]> {
   try {
     const parents = await db.category.findMany({
       where: { parentId: null, visible: true },
@@ -71,7 +75,7 @@ async function getNavCategories(): Promise<NavCategory[]> {
   } catch {
     return [];
   }
-}
+}, ["nav-categories"]);
 
 async function loadSyncedState() {
   try {

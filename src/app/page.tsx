@@ -206,7 +206,7 @@ export default async function HomePage() {
                 href={`/marques/${slugify(b)}`}
                 aria-hidden={k === 1 ? true : undefined}
                 tabIndex={k === 1 ? -1 : undefined}
-                className="whitespace-nowrap font-display text-xl font-bold text-para-900/25 transition hover:text-para-700"
+                className="whitespace-nowrap font-display text-xl font-bold text-para-900/55 transition hover:text-para-700"
               >
                 {b}
               </Link>

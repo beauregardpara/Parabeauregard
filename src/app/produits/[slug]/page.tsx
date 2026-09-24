@@ -156,7 +156,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <Gallery images={p.images.map((i) => ({ url: i.url, alt: i.alt ?? p.name }))} name={p.name} />
 
         <div>
-          <p className="text-xs font-extrabold uppercase tracking-[0.15em] text-para-500">{p.brand}</p>
+          <p className="text-xs font-extrabold uppercase tracking-[0.15em] text-para-700">{p.brand}</p>
           <h1 className="mt-1 font-display text-3xl font-medium leading-tight text-para-950 lg:text-4xl">{p.name}</h1>
 
           {avgRating !== null && (
@@ -171,7 +171,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <span className="font-display text-4xl font-semibold text-para-800">{formatPrice(price)}</span>
             {discount !== null && (
               <>
-                <span className="text-xl text-slate-400 line-through">{formatPrice(p.price)}</span>
+                <span className="text-xl text-slate-500 line-through">{formatPrice(p.price)}</span>
                 <span className="badge-promo rounded-full px-3 py-1 text-sm font-extrabold text-white">-{discount}%</span>
               </>
             )}
@@ -189,7 +189,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                   ⚡ Stock faible — plus que {p.stock} exemplaire(s)
                 </p>
               ) : (
-                <p className="flex items-center gap-2 font-semibold text-emerald-600">✓ En stock — expédié sous 24h</p>
+                <p className="flex items-center gap-2 font-semibold text-emerald-700">✓ En stock — expédié sous 24h</p>
               )
             ) : (
               <p className="font-semibold text-slate-400">✕ Momentanément indisponible</p>
@@ -319,7 +319,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <RecentlyViewedSection excludeId={p.id} />
 
       {p.sourceUrl && (
-        <p className="mt-12 text-center text-[11px] text-slate-300">
+        <p className="mt-12 text-center text-[11px] text-slate-500">
           Fiche produit mise à jour automatiquement depuis nos partenaires ({p.sourceName}).
         </p>
       )}

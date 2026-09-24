@@ -109,7 +109,7 @@ export function ProductImagesEditor({ productId, productName, images, actionFn }
           </div>
         ))}
         {productName && (
-          <div className="grid h-20 w-20 place-items-center rounded-xl border border-dashed border-slate-300 text-center text-[10px] leading-tight text-slate-400">
+          <div className="grid h-20 w-20 place-items-center rounded-xl border border-dashed border-slate-300 text-center text-[10px] leading-tight text-slate-500">
             {items.length} image(s)
           </div>
         )}
@@ -121,7 +121,7 @@ export function ProductImagesEditor({ productId, productName, images, actionFn }
         onDrop={(event) => { event.preventDefault(); void uploadFiles(Array.from(event.dataTransfer.files)); }}
       >
         <span className="font-bold">Déposer une image ici ou choisir un fichier</span>
-        <span className="mt-1 text-[11px] text-slate-400">JPEG, PNG ou WEBP · les photos lourdes sont réduites automatiquement</span>
+        <span className="mt-1 text-[11px] text-slate-500">JPEG, PNG ou WEBP · les photos lourdes sont réduites automatiquement</span>
         <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={(event) => { void uploadFiles(Array.from(event.target.files ?? [])); event.currentTarget.value = ""; }} />
       </label>
 
@@ -154,7 +154,7 @@ export function ProductImagesEditor({ productId, productName, images, actionFn }
       {msg && (
         <p className={`mt-2 text-xs font-semibold ${msg.ok ? "text-emerald-600" : "text-red-500"}`}>{msg.text}</p>
       )}
-      <p className="mt-2 text-[11px] text-slate-400">
+      <p className="mt-2 text-[11px] text-slate-500">
         Photo réelle si elle existe, sinon illustration de secours automatique. Ordre = affichage.
       </p>
     </div>

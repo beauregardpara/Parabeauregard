@@ -94,7 +94,7 @@ export function Header({ categories }: { categories: NavCategory[] }) {
         <div ref={boxRef} className="relative hidden flex-1 lg:block">
           <form onSubmit={submitSearch} role="search">
             <div className="relative mx-auto w-full max-w-xl">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} aria-hidden />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} aria-hidden />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -340,7 +340,7 @@ function CartDrawer() {
                       <button onClick={() => cart.setQty(i.productId, i.qty - 1)} className="h-7 w-7 rounded-full border border-para-200 font-bold text-para-700 hover:bg-para-50" aria-label={`Retirer un ${i.name}`}>−</button>
                       <span className="w-8 text-center text-sm font-bold">{i.qty}</span>
                       <button onClick={() => cart.setQty(i.productId, i.qty + 1)} className="h-7 w-7 rounded-full border border-para-200 font-bold text-para-700 hover:bg-para-50" aria-label={`Ajouter un ${i.name}`}>+</button>
-                      <button onClick={() => cart.remove(i.productId)} className="ml-auto text-xs text-slate-400 hover:text-red-500">Supprimer</button>
+                      <button onClick={() => cart.remove(i.productId)} className="ml-auto text-xs text-slate-500 hover:text-red-500">Supprimer</button>
                     </div>
                   </div>
                 </li>

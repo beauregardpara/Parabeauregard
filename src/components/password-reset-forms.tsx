@@ -82,7 +82,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           <input type="hidden" name="token" value={token} />
           <input name="password" type="password" required minLength={6} autoComplete="new-password" placeholder="Nouveau mot de passe *" aria-label="Nouveau mot de passe" className={inputCls} />
           <input name="confirm" type="password" required minLength={6} autoComplete="new-password" placeholder="Confirmer le mot de passe *" aria-label="Confirmer le mot de passe" className={inputCls} />
-          <p className="px-1 text-xs text-slate-400">6 caractères minimum.</p>
+          <p className="px-1 text-xs text-slate-500">6 caractères minimum.</p>
           {error && (
             <p role="alert" className="rounded-xl bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-600">
               {error}{" "}

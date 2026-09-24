@@ -195,7 +195,7 @@ export default async function HomePage() {
 
       {/* Marques */}
       {topBrands.length > 0 && <section className="overflow-hidden border-y border-para-100 bg-white py-10">
-        <p className="mb-6 text-center text-xs font-extrabold uppercase tracking-[0.25em] text-slate-400">
+        <p className="mb-6 text-center text-xs font-extrabold uppercase tracking-[0.25em] text-slate-500">
           Les marques que nous aimons
         </p>
         <div className="marquee-track gap-14 pr-14">
@@ -282,7 +282,7 @@ export default async function HomePage() {
                         <span>
                           <strong className="block text-sm text-para-900">{t.author}</strong>
                           {t.verifiedPurchase && (
-                            <span className="text-xs text-slate-400">Achat vérifié ✓</span>
+                            <span className="text-xs text-slate-500">Achat vérifié ✓</span>
                           )}
                         </span>
                       </figcaption>

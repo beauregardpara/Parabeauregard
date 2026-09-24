@@ -56,14 +56,14 @@ export default async function OrderConfirmationPage({
       <div className="mt-8 rounded-3xl border border-para-100 bg-white p-6 shadow-sm">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-lg font-bold text-para-900">Détail de la commande</h2>
-          <span className="text-xs text-slate-400">{formatDate(order.createdAt)}</span>
+          <span className="text-xs text-slate-500">{formatDate(order.createdAt)}</span>
         </div>
 
         <ul className="divide-y divide-para-50">
           {order.items.map((i) => (
             <li key={i.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
               <Link href={`/produits/${i.productSlug}`} className="min-w-0 flex-1 truncate hover:text-para-700">
-                {i.productName} <span className="text-slate-400">× {i.quantity}</span>
+                {i.productName} <span className="text-slate-500">× {i.quantity}</span>
               </Link>
               <strong>{formatPrice(i.unitPrice * i.quantity)}</strong>
             </li>
@@ -87,18 +87,18 @@ export default async function OrderConfirmationPage({
         {canView && (
           <div className="mt-5 grid gap-4 rounded-2xl bg-mint/60 p-4 text-sm sm:grid-cols-2">
             <div>
-              <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Livraison</h3>
+              <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Livraison</h3>
               <p>{order.fullName}<br />{order.addressStreet}<br />{order.addressCity} {order.addressPostal ?? ""}<br />{order.phone}</p>
             </div>
             <div>
-              <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Paiement</h3>
+              <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Paiement</h3>
               <p>Paiement à la livraison (espèces)</p>
             </div>
           </div>
         )}
 
         {!canView && (
-          <p className="mt-5 rounded-2xl bg-slate-50 p-4 text-center text-xs text-slate-400">
+          <p className="mt-5 rounded-2xl bg-slate-50 p-4 text-center text-xs text-slate-500">
             Connectez-vous au compte ayant passé cette commande, ou ouvrez le lien récapitulatif reçu par email pour voir les détails de livraison.
           </p>
         )}

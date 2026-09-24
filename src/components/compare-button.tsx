@@ -32,7 +32,7 @@ export function CompareButton({
       aria-pressed={active}
       aria-label={active ? "Retirer de la comparaison" : "Ajouter à la comparaison"}
       className={`${className} flex items-center gap-1 text-[11px] font-bold transition ${
-        active ? "text-para-700" : "text-slate-400 hover:text-para-700"
+        active ? "text-para-700" : "text-slate-500 hover:text-para-700"
       }`}
     >
       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

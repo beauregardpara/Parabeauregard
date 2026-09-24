@@ -57,7 +57,7 @@ export function ContactForm() {
           {pending ? "Envoi en cours…" : "Envoyer le message"}
         </button>
       </div>
-      <p className="text-xs text-slate-400">* Champs obligatoires — vos données restent confidentielles (loi 09-08).</p>
+      <p className="text-xs text-slate-500">* Champs obligatoires — vos données restent confidentielles (loi 09-08).</p>
     </form>
   );
 }

@@ -62,7 +62,7 @@ export function ReputationSection({ reputation }: { reputation: ReputationSnapsh
           ))}
         </ul>
       </details>
-      <p className="mt-4 text-[11px] leading-relaxed text-slate-400">Cette synthèse est générée à partir de sources publiques disponibles sur le web et peut contenir des opinions subjectives.{stale ? " La dernière analyse est à actualiser." : ""}</p>
+      <p className="mt-4 text-[11px] leading-relaxed text-slate-500">Cette synthèse est générée à partir de sources publiques disponibles sur le web et peut contenir des opinions subjectives.{stale ? " La dernière analyse est à actualiser." : ""}</p>
     </section>
   );
 }

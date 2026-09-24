@@ -156,7 +156,7 @@ function FilterBody({
   return (
     <div className="space-y-6 px-5 py-4">
       <div>
-        <label htmlFor="filter-sort" className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-400">Trier par</label>
+        <label htmlFor="filter-sort" className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Trier par</label>
         <select
           id="filter-sort"
           value={sort}
@@ -172,7 +172,7 @@ function FilterBody({
       </div>
 
       <div>
-        <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-400">Prix (DH)</label>
+        <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Prix (DH)</label>
         <div className="flex items-center gap-2">
           <input type="number" min={0} placeholder="min" aria-label="Prix minimum" defaultValue={minPrice} key={`min-${minPrice}`}
             onBlur={(e) => update((p) => (e.target.value ? p.set("min", e.target.value) : p.delete("min")))}
@@ -185,7 +185,7 @@ function FilterBody({
       </div>
 
       <fieldset>
-        <legend className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Marques</legend>
+        <legend className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Marques</legend>
         <div className="max-h-52 space-y-1 overflow-y-auto pr-1">
           {brands.map((b) => (
             <label key={b} className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 text-sm transition hover:bg-mint">

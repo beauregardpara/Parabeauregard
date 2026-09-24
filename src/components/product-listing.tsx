@@ -94,7 +94,7 @@ export async function ProductListing({
       <header className="mb-8">
         <h1 className="font-display text-3xl font-extrabold text-para-950 sm:text-4xl">{title}</h1>
         {subtitle && <p className="mt-2 max-w-2xl text-slate-600">{subtitle}</p>}
-        <p className="mt-2 text-sm text-slate-400">{result.total} produit(s)</p>
+        <p className="mt-2 text-sm text-slate-500">{result.total} produit(s)</p>
       </header>
 
       {/* Bande d'en-tête : identité Para Beauregard, sans visuel de produit
@@ -149,7 +149,7 @@ export async function ProductListing({
                 })}
               </div>
               {isAll && result.total > 200 && (
-                <p className="mb-4 text-right text-[11px] text-slate-400">
+                <p className="mb-4 text-right text-[11px] text-slate-500">
                   {result.total} produits chargés d’un coup : l’affichage peut être lent en mobile.
                 </p>
               )}
@@ -174,7 +174,7 @@ export async function ProductListing({
                   )}
                   {paginationItems(result.page, result.pages).map((item, i) =>
                     item === "…" ? (
-                      <span key={`gap-${i}`} aria-hidden className="px-1 text-slate-400">
+                      <span key={`gap-${i}`} aria-hidden className="px-1 text-slate-500">
                         …
                       </span>
                     ) : (

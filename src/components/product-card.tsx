@@ -86,7 +86,7 @@ export function ProductCard({ p }: { p: ProductCardData }) {
           <p className="text-xs text-amber-500" aria-label={`Note ${p.avgRating.toFixed(1)} sur 5`}>
             {"★".repeat(Math.round(p.avgRating))}
             <span className="text-slate-300">{"★".repeat(5 - Math.round(p.avgRating))}</span>
-            <span className="ml-1 text-slate-400">({p.reviewsCount})</span>
+            <span className="ml-1 text-slate-500">({p.reviewsCount})</span>
           </p>
         ) : null}
 
@@ -98,7 +98,7 @@ export function ProductCard({ p }: { p: ProductCardData }) {
         </div>
 
         {lowStock && <p className="text-[11px] font-semibold text-coral-600">⚡ Plus que {p.stock} en stock</p>}
-        {!p.unlimitedStock && p.stock <= 0 && <p className="text-[11px] font-semibold text-slate-400">Indisponible</p>}
+        {!p.unlimitedStock && p.stock <= 0 && <p className="text-[11px] font-semibold text-slate-500">Indisponible</p>}
 
         <AddToCartButton
           className="mt-2 w-full px-4 py-2.5 text-sm"

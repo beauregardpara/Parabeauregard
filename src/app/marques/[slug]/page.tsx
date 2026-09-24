@@ -70,7 +70,7 @@ export default async function BrandPage({
         <p className="mt-2 max-w-2xl text-slate-600">
           Tous les produits {brand} disponibles chez Para Beauregard, livrés partout au Maroc.
         </p>
-        <p className="mt-2 text-sm text-slate-400">{result.total} produit(s)</p>
+        <p className="mt-2 text-sm text-slate-500">{result.total} produit(s)</p>
       </header>
 
       {result.items.length === 0 ? (

@@ -18,7 +18,7 @@ export default function RetourPage() {
           sous 48 h ouvrées et vous recevrez la réponse par email.
         </p>
         <ReturnRequestForm />
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="mt-6 text-center text-xs text-slate-500">
           Une demande existe déjà pour cette commande ? Consultez votre boîte mail pour la réponse de notre équipe.
         </p>
       </div>

@@ -37,6 +37,8 @@ test.describe("Admin — sélection groupée sur tout le filtre", () => {
   });
 
   test("publie les 30 produits du filtre, pas seulement les 25 de la page", async ({ page }) => {
+    // Les actions portant sur tout un filtre demandent confirmation : on accepte.
+    page.on("dialog", (d) => d.accept());
     await page.goto(listUrl("PENDING_REVIEW"));
     await page.waitForLoadState("networkidle");
     await expect(page.locator('input[name="ids"]')).toHaveCount(PER_PAGE);
@@ -67,6 +69,26 @@ test.describe("Admin — sélection groupée sur tout le filtre", () => {
     await page.getByRole("button", { name: "À valider" }).click();
     await page.waitForLoadState("networkidle");
     await expectRows(page, "PENDING_REVIEW", PER_PAGE);
+  });
+
+test("retirer de la vente demande confirmation et respecte le refus", async ({ page }) => {
+    await page.goto(listUrl("PENDING_REVIEW"));
+    await page.waitForLoadState("networkidle");
+    await page.getByRole("checkbox", { name: "Sélectionner tous les produits de cette page" }).check();
+    await page.getByRole("button", { name: `Sélectionner les ${TOTAL} produits correspondant au filtre` }).click();
+
+    // Refus : rien ne doit changer.
+    const messages: string[] = [];
+    page.once("dialog", (d) => {
+      messages.push(d.message());
+      return d.dismiss();
+    });
+    await page.getByRole("button", { name: "Masquer" }).click();
+    await page.waitForTimeout(800);
+    expect(messages[0]).toContain(`Retirer ${TOTAL} produit(s)`);
+    expect(messages[0]).toContain("filtre");
+    await expectRows(page, "PENDING_REVIEW", PER_PAGE); // toujours en brouillon
+    await expectRows(page, "HIDDEN", 0); // rien de masqué
   });
 
   test("décocher une ligne ramène la portée à la page affichée", async ({ page }) => {

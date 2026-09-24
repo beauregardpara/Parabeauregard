@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
  * Sélection des produits pour les actions groupées.
@@ -105,6 +105,56 @@ export function SelectAllPageCheckbox({ count, total }: { count: number; total: 
   );
 }
 
+/** Nombre de produits réellement visés par le bouton, au moment du clic. */
+function selectionSize(form: HTMLFormElement | null | undefined): { count: number; filtered: boolean } {
+  const scope = form?.querySelector<HTMLInputElement>('input[name="scope"]')?.value;
+  if (scope === "filtered") {
+    const total = Number(form?.querySelector<HTMLInputElement>('input[name="expectedCount"]')?.value || 0);
+    return { count: total, filtered: true };
+  }
+  const boxes = form?.querySelectorAll<HTMLInputElement>('input[name="ids"]:checked') ?? [];
+  return { count: boxes.length, filtered: false };
+}
+
+/**
+ * Bouton d'action groupée.
+ *
+ * « Masquer », « À valider » et « Archiver » retirent des produits de la
+ * boutique : sans confirmation, un clic à la place de « Publier » dépublie
+ * silencieusement des dizaines de produits (c'est arrivé le 24/09, 89 produits
+ * retirés de la vente sans que personne s'en aperçoive).
+ */
+export function BulkActionButton({
+  action,
+  label,
+  removesFromShop,
+}: {
+  action: string;
+  label: ReactNode;
+  removesFromShop?: boolean;
+}) {
+  return (
+    <button
+      type="submit"
+      name="bulkAction"
+      value={action}
+      onClick={(event) => {
+        const { count, filtered } = selectionSize(event.currentTarget.closest("form"));
+        if (count === 0) return;
+        if (!removesFromShop && !filtered) return;
+        const portee = filtered ? " correspondant au filtre (toutes les pages)" : "";
+        const message = removesFromShop
+          ? `Retirer ${count} produit(s)${portee} de la boutique ? Ils ne seront plus visibles ni commandables.`
+          : `Publier ${count} produit(s)${portee} ? Ils deviendront visibles et commandables.`;
+        if (!window.confirm(message)) event.preventDefault();
+      }}
+      className="btn-3d rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-white/70"
+    >
+      {label}
+    </button>
+  );
+}
+
 export function BulkDeleteProductButton() {
   return (
     <button
@@ -113,8 +163,8 @@ export function BulkDeleteProductButton() {
       value="delete"
       onClick={(event) => {
         const form = event.currentTarget.closest("form");
-        const scope = form?.querySelector<HTMLInputElement>('input[name="scope"]')?.value;
-        const total = form?.querySelector<HTMLInputElement>('input[name="expectedCount"]')?.value;
+        const { count: total, filtered } = selectionSize(form);
+        const scope = filtered ? "filtered" : "page";
         // Une suppression portant sur tout un filtre mérite une confirmation chiffrée.
         const message =
           scope === "filtered"

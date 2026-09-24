@@ -9,7 +9,7 @@ import { Clock3, Database, Eye, Plus, Search, Trash2, Upload } from "lucide-reac
 import { requireAdminPagePermission } from "@/lib/auth";
 import { getSettingNumber, SETTING_KEYS } from "@/lib/settings";
 import { AdminProductImport } from "@/components/admin-product-import";
-import { BulkDeleteProductButton, SelectAllPageCheckbox } from "@/components/admin-product-selection";
+import { BulkActionButton, BulkDeleteProductButton, SelectAllPageCheckbox } from "@/components/admin-product-selection";
 import {
   ADMIN_PRODUCT_FILTER_KEYS,
   buildAdminProductWhere,
@@ -120,16 +120,20 @@ export default async function AdminProductsPage({
           <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-mint/60 p-3 text-sm">
             <span className="text-xs font-bold uppercase tracking-wide text-slate-400">Sélection →</span>
             <SelectAllPageCheckbox count={products.length} total={total} />
+            {/* « Masquer », « À valider » et « Archiver » retirent de la vente :
+                ils demandent confirmation avec le nombre exact de produits. */}
             {[
-              { action: "publish", label: "Publier", Icon: Upload },
-              { action: "hide", label: "Masquer", Icon: Eye },
-              { action: "pending", label: "À valider", Icon: Clock3 },
-              { action: "archive", label: "Archiver", Icon: Trash2 },
-            ].map(({ action, label, Icon }) => (
-              <button key={action} type="submit" name="bulkAction" value={action}
-                className="btn-3d rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-white/70">
-                <span className="inline-flex items-center gap-1.5"><Icon size={13} aria-hidden />{label}</span>
-              </button>
+              { action: "publish", label: "Publier", Icon: Upload, removesFromShop: false },
+              { action: "hide", label: "Masquer", Icon: Eye, removesFromShop: true },
+              { action: "pending", label: "À valider", Icon: Clock3, removesFromShop: true },
+              { action: "archive", label: "Archiver", Icon: Trash2, removesFromShop: true },
+            ].map(({ action, label, Icon, removesFromShop }) => (
+              <BulkActionButton
+                key={action}
+                action={action}
+                removesFromShop={removesFromShop}
+                label={<span className="inline-flex items-center gap-1.5"><Icon size={13} aria-hidden />{label}</span>}
+              />
             ))}
             <BulkDeleteProductButton />
           </div>

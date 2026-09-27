@@ -46,3 +46,43 @@ test.describe("Responsive", () => {
     });
   }
 });
+
+/**
+ * La barre de recherche existe en deux exemplaires : posée dans l'en-tête à
+ * partir de 1024 px, en pleine largeur sous l'en-tête en dessous. Les deux
+ * seuils ne se rejoignaient pas et la tranche 768–1023 px n'affichait aucun
+ * champ de recherche.
+ */
+test.describe("Barre de recherche", () => {
+  for (const width of [375, 768, 900, 1024, 1440]) {
+    test(`un champ de recherche est utilisable à ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/", { waitUntil: "domcontentloaded" });
+
+      const champs = page.getByRole("combobox", { name: "Rechercher un produit" });
+      const visible = champs.filter({ visible: true });
+      await expect(visible).toHaveCount(1);
+
+      await visible.fill("creme");
+      await page.getByRole("button", { name: "Lancer la recherche" }).filter({ visible: true }).click();
+      await expect(page).toHaveURL(/\/recherche\?q=creme/);
+      await expect(page.getByRole("heading", { name: /Résultats pour/ })).toBeVisible({ timeout: 15_000 });
+    });
+  }
+
+  test("les suggestions se parcourent au clavier", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+
+    const champ = page.getByRole("combobox", { name: "Rechercher un produit" }).filter({ visible: true });
+    await champ.fill("creme");
+    const options = page.getByRole("option");
+    await expect(options.first()).toBeVisible({ timeout: 15_000 });
+
+    await champ.press("ArrowDown");
+    await expect(options.first()).toHaveAttribute("aria-selected", "true");
+
+    await champ.press("Escape");
+    await expect(options.first()).toBeHidden();
+  });
+});

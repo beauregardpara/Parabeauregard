@@ -21,7 +21,7 @@ export function AddToCartButton({
 
   if (outOfStock) {
     return (
-      <span className={`block cursor-not-allowed rounded-full bg-slate-100 px-4 py-2 text-center text-xs font-bold text-slate-500 ${className}`}>
+      <span className={`block cursor-not-allowed rounded-full bg-slate-100 px-4 py-2 text-center text-xs font-bold text-slate-600 ${className}`}>
         Rupture de stock
       </span>
     );

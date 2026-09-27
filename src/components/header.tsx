@@ -5,11 +5,33 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Menu, MessageCircle, Search, ShoppingBag, UserRound, X } from "lucide-react";
+import { Baby, BadgeCheck, Bath, ChevronDown, CreditCard, HeartHandshake, Leaf, Menu, MessageCircle, PersonStanding, Pill, ScanFace, Search,
+  ShoppingBag, Store, Sun, Truck, UserRound, Waves, X } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { FreeShippingProgress } from "@/components/free-shipping-progress";
 import { formatPrice } from "@/lib/format";
 import { useEscapeClose } from "@/lib/use-escape-close";
+
+/** Bandeau de service : les garanties rappelees en haut de chaque page. */
+const SERVICES = [
+  { Icon: Truck, texte: "Livraison partout au Maroc" },
+  { Icon: BadgeCheck, texte: "Produits 100% authentiques" },
+  { Icon: HeartHandshake, texte: "Conseils d'experts pharmaciens" },
+  { Icon: CreditCard, texte: "Paiement à la livraison" },
+] as const;
+
+const RAYONS = [
+  { href: "/categories/soins-visage", label: "Visage", Icon: ScanFace },
+  { href: "/recherche?q=soins%20corps", label: "Corps", Icon: PersonStanding },
+  { href: "/categories/soins-cheveux", label: "Cheveux", Icon: Waves },
+  { href: "/categories/bebe-maman", label: "Bébé & Maman", Icon: Baby },
+  { href: "/categories/hygiene-corps", label: "Hygiène", Icon: Bath },
+  { href: "/recherche?q=compléments", label: "Compléments", Icon: Pill },
+  { href: "/recherche?q=solaire", label: "Solaire", Icon: Sun },
+  { href: "/recherche?q=homme", label: "Hommes", Icon: UserRound },
+  { href: "/recherche?q=nature%20bio", label: "Nature & Bio", Icon: Leaf },
+  { href: "/marques", label: "Marques", Icon: Store },
+] as const;
 
 export type NavCategory = {
   id: number;
@@ -77,11 +99,24 @@ export function Header({ categories }: { categories: NavCategory[] }) {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-para-100/80 bg-[#fffdfb]/95 backdrop-blur-xl">
-      <div className="container-page flex h-20 items-center gap-4">
+    <header className="sticky top-0 z-40">
+      <div className="bg-para-900 text-para-100">
+        <div className="container-page flex h-9 items-center justify-between gap-4 overflow-hidden text-[11px]">
+          {SERVICES.map(({ Icon, texte }, i) => (
+            <span key={texte} className={`flex shrink-0 items-center gap-2 ${i > 1 ? "hidden lg:flex" : i > 0 ? "hidden sm:flex" : ""}`}>
+              <Icon className="h-3.5 w-3.5 shrink-0 text-para-300" strokeWidth={1.6} aria-hidden />
+              {texte}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-[#f4f1e7]/85 pb-2 pt-3 backdrop-blur-xl">
+      <div className="container-page rounded-2xl bg-white shadow-[0_10px_30px_-18px_rgba(20,48,31,.45)]">
+      <div className="flex h-[68px] items-center gap-4 px-4 sm:px-5">
         <Link href="/" className="flex h-12 w-[170px] shrink-0 items-center sm:h-[52px] sm:w-[210px] lg:w-[240px]" aria-label="Parapharmacie Beauregard — accueil">
           <Image
-            src="/brand/para-beauregard-official.png"
+            src="/brand/para-beauregard-official-transparent.png"
             alt="Parapharmacie Beauregard"
             width={1185}
             height={315}
@@ -94,19 +129,26 @@ export function Header({ categories }: { categories: NavCategory[] }) {
         <div ref={boxRef} className="relative hidden flex-1 lg:block">
           <form onSubmit={submitSearch} role="search">
             <div className="relative mx-auto w-full max-w-xl">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} aria-hidden />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-para-600" size={18} aria-hidden />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onFocus={() => setShowSug(true)}
                 placeholder="Rechercher un produit, une marque, un besoin…"
-                className="w-full rounded-full border border-para-100 bg-[#fdf6f1] py-3 pl-11 pr-4 outline-none transition focus:border-para-500 focus:bg-[#fffdfb]"
+                className="w-full rounded-full border border-para-200 bg-white py-2.5 pl-11 pr-14 text-sm outline-none transition placeholder:text-para-900/45 focus:border-para-500"
                 aria-label="Rechercher un produit"
               />
+              <button
+                type="submit"
+                className="absolute right-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-para-800 text-white transition hover:bg-para-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-para-900"
+                aria-label="Lancer la recherche"
+              >
+                <Search size={15} strokeWidth={2.2} aria-hidden />
+              </button>
             </div>
           </form>
           {showSug && suggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-para-100 bg-[#fffdfb] shadow-xl">
+            <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-para-200/70 bg-white shadow-xl">
               {suggestions.map((s) => (
                 <Link key={s.id} href={`/produits/${s.slug}`} onClick={() => setShowSug(false)}
                   className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-para-50">
@@ -115,7 +157,7 @@ export function Header({ categories }: { categories: NavCategory[] }) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{s.name}</span>
-                    <span className="text-xs text-slate-500">{s.brand}</span>
+                    <span className="text-xs text-slate-600">{s.brand}</span>
                   </span>
                   <span className="text-sm font-bold text-para-700">
                     {formatPrice(s.promoPrice ?? s.price)}
@@ -180,6 +222,20 @@ export function Header({ categories }: { categories: NavCategory[] }) {
         </div>
       </div>
 
+      {/* Rayons, sur une ligne, comme sur la maquette. */}
+      <nav className="hidden items-center justify-between gap-1 border-t border-para-100 px-5 py-2.5 lg:flex" aria-label="Rayons">
+          {RAYONS.map(({ href, label, Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[12px] text-para-900 transition hover:text-para-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-para-700"
+            >
+              <Icon className="h-3.5 w-3.5 text-para-700" strokeWidth={1.5} aria-hidden />
+              {label}
+            </Link>
+          ))}
+        </nav>
+
       {/* Recherche mobile */}
       <div className="border-t border-para-100/60 px-4 py-2 md:hidden">
         <form onSubmit={submitSearch} role="search" className="flex items-center rounded-full border border-para-200 bg-[#fffdfb]">
@@ -188,10 +244,12 @@ export function Header({ categories }: { categories: NavCategory[] }) {
           <button type="submit" className="px-4 text-base" aria-label="Lancer la recherche">🔍</button>
         </form>
       </div>
+      </div>
+      </div>
 
       {mobileOpen && (
         <nav className="border-t border-para-100 bg-[#fffdfb] px-4 py-3 lg:hidden" aria-label="Menu mobile">
-          <p className="px-2 pb-1 text-xs font-bold uppercase tracking-wide text-para-500">Catégories</p>
+          <p className="px-2 pb-1 text-xs font-bold uppercase tracking-wide text-para-600">Catégories</p>
           {categories.map((c) => (
             <details key={c.id} className="group">
               <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-2 py-2 text-sm font-semibold hover:bg-para-50">
@@ -319,7 +377,7 @@ function CartDrawer() {
         {cart.items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
             <span className="text-5xl" aria-hidden>🛒</span>
-            <p className="font-medium text-slate-500">Votre panier est vide</p>
+            <p className="font-medium text-slate-600">Votre panier est vide</p>
             <Link href="/promotions" onClick={() => cart.setOpen(false)}
               className="btn-3d btn-shine rounded-full bg-gradient-to-r from-para-500 to-para-700 px-6 py-2.5 text-sm font-semibold text-white">
               Découvrir les promos
@@ -340,7 +398,7 @@ function CartDrawer() {
                       <button onClick={() => cart.setQty(i.productId, i.qty - 1)} className="h-7 w-7 rounded-full border border-para-200 font-bold text-para-700 hover:bg-para-50" aria-label={`Retirer un ${i.name}`}>−</button>
                       <span className="w-8 text-center text-sm font-bold">{i.qty}</span>
                       <button onClick={() => cart.setQty(i.productId, i.qty + 1)} className="h-7 w-7 rounded-full border border-para-200 font-bold text-para-700 hover:bg-para-50" aria-label={`Ajouter un ${i.name}`}>+</button>
-                      <button onClick={() => cart.remove(i.productId)} className="ml-auto text-xs text-slate-500 hover:text-red-500">Supprimer</button>
+                      <button onClick={() => cart.remove(i.productId)} className="ml-auto text-xs text-slate-600 hover:text-red-500">Supprimer</button>
                     </div>
                   </div>
                 </li>
@@ -349,7 +407,7 @@ function CartDrawer() {
             <div className="border-t border-para-100 bg-para-50/70 px-5 py-4">
               <FreeShippingProgress subtotal={cart.subtotal} />
               <div className="mt-3 flex justify-between text-sm"><span>Sous-total</span><strong>{formatPrice(cart.subtotal)}</strong></div>
-              <p className="mt-1 text-xs text-slate-500">Frais de livraison calculés à l'étape suivante.</p>
+              <p className="mt-1 text-xs text-slate-600">Frais de livraison calculés à l'étape suivante.</p>
               <Link href="/commander" onClick={() => cart.setOpen(false)}
                 className="btn-3d btn-shine block rounded-full bg-gradient-to-r from-para-500 to-para-700 py-3 text-center font-semibold text-white shadow-soft">
                 Passer commande →

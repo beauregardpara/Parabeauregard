@@ -14,9 +14,9 @@ function Card({ title, subtitle, children }: { title: string; subtitle: string; 
     <div className="mx-auto max-w-md px-4 py-12 lg:py-16">
       <div className="rounded-[2rem] border border-para-100 bg-white p-8 shadow-lift">
         <h1 className="text-center font-display text-2xl font-extrabold text-para-950">{title}</h1>
-        <p className="mt-1 mb-6 text-center text-sm text-slate-500">{subtitle}</p>
+        <p className="mt-1 mb-6 text-center text-sm text-slate-600">{subtitle}</p>
         {children}
-        <p className="mt-5 text-center text-sm text-slate-500">
+        <p className="mt-5 text-center text-sm text-slate-600">
           <Link href="/compte/connexion" className="font-bold text-para-700 hover:underline">Retour à la connexion</Link>
         </p>
       </div>
@@ -82,7 +82,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           <input type="hidden" name="token" value={token} />
           <input name="password" type="password" required minLength={6} autoComplete="new-password" placeholder="Nouveau mot de passe *" aria-label="Nouveau mot de passe" className={inputCls} />
           <input name="confirm" type="password" required minLength={6} autoComplete="new-password" placeholder="Confirmer le mot de passe *" aria-label="Confirmer le mot de passe" className={inputCls} />
-          <p className="px-1 text-xs text-slate-500">6 caractères minimum.</p>
+          <p className="px-1 text-xs text-slate-600">6 caractères minimum.</p>
           {error && (
             <p role="alert" className="rounded-xl bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-600">
               {error}{" "}

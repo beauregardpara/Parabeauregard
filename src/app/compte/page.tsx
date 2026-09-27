@@ -56,7 +56,7 @@ export default async function AccountPage() {
           <h1 className="font-display text-3xl font-extrabold text-para-950">
             Bonjour, {customer.firstName} 👋
           </h1>
-          <p className="text-sm text-slate-500">{customer.email}</p>
+          <p className="text-sm text-slate-600">{customer.email}</p>
         </div>
         <form action={logoutCustomer}>
           <button className="btn-3d rounded-full border border-para-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-mint">
@@ -73,7 +73,7 @@ export default async function AccountPage() {
           ["Membre depuis", formatDate(customer.createdAt).slice(0, 12)],
         ] as const).map(([label, value]) => (
           <div key={String(label)} className="rounded-2xl border border-para-100 bg-gradient-to-br from-white to-mint p-5 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-600">{label}</p>
             <p className="mt-1 font-display text-xl font-extrabold text-para-800">{value}</p>
           </div>
         ))}
@@ -94,7 +94,7 @@ export default async function AccountPage() {
         {orders.length === 0 ? (
           <div className="px-6 py-14 text-center">
             <span className="text-4xl" aria-hidden>📦</span>
-            <p className="mt-3 text-sm text-slate-500">Aucune commande pour le moment.</p>
+            <p className="mt-3 text-sm text-slate-600">Aucune commande pour le moment.</p>
             <Link href="/" className="mt-4 inline-block rounded-full bg-gradient-to-r from-para-500 to-para-700 px-6 py-2.5 text-sm font-semibold text-white">
               Découvrir la boutique
             </Link>
@@ -107,7 +107,7 @@ export default async function AccountPage() {
                   <Link href={`/commande/${o.reference}`} className="font-bold text-para-800 hover:underline">
                     {o.reference}
                   </Link>
-                  <p className="text-xs text-slate-500">{formatDate(o.createdAt)} · {o.items.length} article(s)</p>
+                  <p className="text-xs text-slate-600">{formatDate(o.createdAt)} · {o.items.length} article(s)</p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-bold ${STATUS_STYLES[o.status]}`}>
                   {STATUS_LABELS[o.status]}

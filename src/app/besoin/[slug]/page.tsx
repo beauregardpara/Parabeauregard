@@ -41,7 +41,7 @@ export default async function NeedPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
-      <nav aria-label="Fil d'ariane" className="mb-4 text-xs text-slate-500">
+      <nav aria-label="Fil d'ariane" className="mb-4 text-xs text-slate-600">
         <Link href="/" className="hover:text-para-700">Accueil</Link>
         <span className="mx-1.5">/</span>
         <Link href="/besoin" className="hover:text-para-700">Nos univers</Link>
@@ -50,17 +50,17 @@ export default async function NeedPage({
       </nav>
 
       <header className="mb-8">
-        <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-para-500">{need.tagline}</p>
+        <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-para-600">{need.tagline}</p>
         <h1 className="mt-1 font-display text-3xl font-extrabold text-para-950 sm:text-4xl">{need.title}</h1>
         <p className="mt-2 max-w-2xl leading-relaxed text-slate-600">{need.description}</p>
-        <p className="mt-2 text-sm text-slate-500">{result.total} produit(s)</p>
+        <p className="mt-2 text-sm text-slate-600">{result.total} produit(s)</p>
       </header>
 
       {result.items.length === 0 ? (
         <div className="grid place-items-center rounded-3xl border border-dashed border-para-200 bg-mint/40 py-24 text-center">
           <span className="text-5xl" aria-hidden>🔍</span>
           <p className="mt-4 font-display text-lg font-bold text-para-900">Aucun produit trouvé</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Essayez une autre catégorie ou explorez nos univers de besoins.
           </p>
         </div>

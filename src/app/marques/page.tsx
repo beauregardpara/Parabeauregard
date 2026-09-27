@@ -40,14 +40,14 @@ export default async function MarquesPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
-      <nav aria-label="Fil d'ariane" className="mb-4 text-xs text-slate-500">
+      <nav aria-label="Fil d'ariane" className="mb-4 text-xs text-slate-600">
         <Link href="/" className="hover:text-para-700">Accueil</Link>
         <span className="mx-1.5">/</span>
         <span className="font-semibold text-para-800">Nos marques</span>
       </nav>
 
       <header className="mb-10">
-        <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-para-500">Toutes les marques</p>
+        <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-para-600">Toutes les marques</p>
         <h1 className="mt-1 font-display text-3xl font-extrabold text-para-950 sm:text-4xl">Nos marques</h1>
         <p className="mt-2 max-w-2xl text-slate-600">
           Les marques de parapharmacie que nous sélectionnons, avec leurs produits disponibles dans notre catalogue.
@@ -58,7 +58,7 @@ export default async function MarquesPage() {
         <div className="grid place-items-center rounded-3xl border border-dashed border-para-200 bg-mint/40 py-24 text-center">
           <span className="text-5xl" aria-hidden>🧴</span>
           <p className="mt-4 font-display text-lg font-bold text-para-900">Aucune marque disponible</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Notre catalogue s'enrichit chaque semaine — revenez bientôt !
           </p>
         </div>
@@ -75,11 +75,11 @@ export default async function MarquesPage() {
               </span>
               <span className="min-w-0">
                 <span className="block truncate font-display text-lg font-bold text-para-900">{brand}</span>
-                <span className="mt-0.5 block text-sm text-slate-500">
+                <span className="mt-0.5 block text-sm text-slate-600">
                   {count} produit{count > 1 ? "s" : ""}
                 </span>
               </span>
-              <span aria-hidden className="ml-auto text-para-500 transition-transform duration-300 group-hover:translate-x-1.5">→</span>
+              <span aria-hidden className="ml-auto text-para-600 transition-transform duration-300 group-hover:translate-x-1.5">→</span>
             </Link>
           ))}
         </div>

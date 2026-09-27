@@ -77,6 +77,19 @@ test.describe("Site public", () => {
     await expect(page.getByPlaceholder(/Rechercher un produit/)).toBeVisible();
   });
 
+  test("la recherche ignore l'ordre des mots", async ({ page }) => {
+    // Régression : les mots devaient auparavant apparaître dans cet ordre exact,
+    // si bien que « hydratante crème » ne renvoyait aucun résultat.
+    const compte = async (q: string) => {
+      await page.goto(`/recherche?q=${encodeURIComponent(q)}`, { waitUntil: "domcontentloaded" });
+      await expect(page.getByRole("heading", { name: /Résultats pour/ })).toBeVisible({ timeout: 15_000 });
+      return page.locator("article").count();
+    };
+    const ordonne = await compte("creme hydratante");
+    test.skip(ordonne === 0, "catalogue de test sans crème hydratante");
+    expect(await compte("hydratante creme")).toBe(ordonne);
+  });
+
   test("le contact affiche les coordonnées officielles", async ({ page }) => {
     await page.goto("/contact");
     await expect(page.getByRole("main").getByText("06 63 48 82 87", { exact: true })).toBeVisible();

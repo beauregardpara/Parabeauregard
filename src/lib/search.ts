@@ -1,8 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { cachedCatalogue } from "@/lib/cache";
 import { db } from "@/lib/db";
-import { searchTermsForQuery } from "@/lib/search/synonyms";
-import { foldForSearch } from "@/lib/product-name";
+import { productTextWhere } from "@/lib/search/text-filter";
 
 export type ProductFilters = {
   q?: string;
@@ -45,36 +44,11 @@ async function searchProductsUncached(filters: ProductFilters) {
 
   const orBlocks: Prisma.ProductWhereInput[] = [];
 
-  if (filters.q) {
-    // `searchText` est replié (minuscules, sans accents) : indispensable car
-    // SQLite compare les LIKE octet à octet — « avene » doit trouver « Avène ».
-    const folded = foldForSearch(filters.q);
-    orBlocks.push({
-      OR: [
-        ...(folded ? [{ searchText: { contains: folded } }] : []),
-        { name: { contains: filters.q } },
-        { brand: { contains: filters.q } },
-        { shortDescription: { contains: filters.q } },
-        { description: { contains: filters.q } },
-      ],
-    });
-
-    const terms = searchTermsForQuery(filters.q);
-    if (terms.length > 0) {
-      orBlocks.push({
-        OR: terms.flatMap((t) => {
-          const foldedTerm = foldForSearch(t);
-          return [
-            ...(foldedTerm ? [{ searchText: { contains: foldedTerm } }] : []),
-            { name: { contains: t } },
-            { brand: { contains: t } },
-            { shortDescription: { contains: t } },
-            { description: { contains: t } },
-          ];
-        }),
-      });
-    }
-  }
+  // Le filtre texte est monté séparément : il doit rester un seul bloc, sinon
+  // deux blocs de `orBlocks` se combinent en ET et exigent que la requête
+  // entière soit présente telle quelle (« moussant gel » ne trouvait rien).
+  const textWhere = filters.q ? productTextWhere(filters.q, "strict") : null;
+  if (textWhere) orBlocks.push(textWhere);
 
   if (filters.brands?.length) {
     where.brand = { in: filters.brands };
@@ -115,20 +89,34 @@ async function searchProductsUncached(filters: ProductFilters) {
             ? { soldCount: "desc" }
             : { createdAt: "desc" };
 
-  const [items, total] = await Promise.all([
-    db.product.findMany({
-      where,
-      orderBy,
-      skip: (page - 1) * perPage,
-      take: perPage,
-      include: {
-        category: true,
-        images: { orderBy: { order: "asc" }, take: 1 },
-        reviews: { where: { status: "APPROVED" }, select: { rating: true } },
-      },
-    }),
-    db.product.count({ where }),
-  ]);
+  const run = (w: Prisma.ProductWhereInput) =>
+    Promise.all([
+      db.product.findMany({
+        where: w,
+        orderBy,
+        skip: (page - 1) * perPage,
+        take: perPage,
+        include: {
+          category: true,
+          images: { orderBy: { order: "asc" }, take: 1 },
+          reviews: { where: { status: "APPROVED" }, select: { rating: true } },
+        },
+      }),
+      db.product.count({ where: w }),
+    ]);
+
+  let [items, total] = await run(where);
+
+  // Repli : si exiger tous les mots ne donne rien, on réessaie en acceptant les
+  // fiches qui n'en contiennent qu'une partie. Mieux vaut des résultats
+  // approchants qu'une page vide.
+  if (total === 0 && filters.q) {
+    const loose = productTextWhere(filters.q, "loose");
+    if (loose) {
+      const relaxed = { ...where, AND: orBlocks.map((b) => (b === textWhere ? loose : b)) };
+      [items, total] = await run(relaxed);
+    }
+  }
 
   return {
     items: items.map(({ reviews, ...p }) => ({

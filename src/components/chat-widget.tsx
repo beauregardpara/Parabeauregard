@@ -149,7 +149,7 @@ export function ChatWidget() {
                         <ProductImage src={p.imageUrl} alt="" width={44} height={44} fallbackSeed={p.name} className="h-11 w-11 rounded-lg object-cover" />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-xs font-semibold">{p.name}</span>
-                          <span className="text-[11px] text-slate-500">{p.brand}</span>
+                          <span className="text-[11px] text-slate-600">{p.brand}</span>
                         </span>
                         <span className="text-sm font-bold text-para-700">
                           {(p.promoPrice ?? p.price).toFixed(0)} DH
@@ -195,7 +195,7 @@ export function ChatWidget() {
               aria-label="Envoyer"><Send size={16} /></button>
           </form>
           {/* Mention obligatoire en contexte parapharmacie. */}
-          <p className="mt-2 text-center text-[11px] leading-snug text-slate-500">
+          <p className="mt-2 text-center text-[11px] leading-snug text-slate-600">
             Les recommandations proposées ne remplacent pas l&apos;avis d&apos;un professionnel de santé.
           </p>
         </div>

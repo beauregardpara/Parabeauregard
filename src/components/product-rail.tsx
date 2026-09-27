@@ -29,7 +29,7 @@ export async function ProductRail({
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl font-extrabold text-para-950 sm:text-3xl">{title}</h2>
-          {subtitle && <p className="mt-1 text-slate-500">{subtitle}</p>}
+          {subtitle && <p className="mt-1 text-slate-600">{subtitle}</p>}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">

@@ -48,7 +48,7 @@ export default async function OrderConfirmationPage({
           Votre commande <strong className="text-para-800">{order.reference}</strong> a bien été enregistrée.
           Préparez le montant exact pour le livreur.
         </p>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-600">
           Un email récapitulatif vous sera envoyé. Statut : <strong>{STATUS_LABELS[order.status]}</strong>
         </p>
       </div>
@@ -56,14 +56,14 @@ export default async function OrderConfirmationPage({
       <div className="mt-8 rounded-3xl border border-para-100 bg-white p-6 shadow-sm">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-lg font-bold text-para-900">Détail de la commande</h2>
-          <span className="text-xs text-slate-500">{formatDate(order.createdAt)}</span>
+          <span className="text-xs text-slate-600">{formatDate(order.createdAt)}</span>
         </div>
 
         <ul className="divide-y divide-para-50">
           {order.items.map((i) => (
             <li key={i.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
               <Link href={`/produits/${i.productSlug}`} className="min-w-0 flex-1 truncate hover:text-para-700">
-                {i.productName} <span className="text-slate-500">× {i.quantity}</span>
+                {i.productName} <span className="text-slate-600">× {i.quantity}</span>
               </Link>
               <strong>{formatPrice(i.unitPrice * i.quantity)}</strong>
             </li>
@@ -71,15 +71,15 @@ export default async function OrderConfirmationPage({
         </ul>
 
         <dl className="mt-4 space-y-1 border-t border-dashed border-para-100 pt-4 text-sm">
-          <div className="flex justify-between"><dt className="text-slate-500">Sous-total</dt><dd>{formatPrice(order.subtotal)}</dd></div>
+          <div className="flex justify-between"><dt className="text-slate-600">Sous-total</dt><dd>{formatPrice(order.subtotal)}</dd></div>
           {order.discount > 0 && (
             <div className="flex justify-between text-emerald-600">
               <dt>Réduction {order.couponCode ? `(${order.couponCode})` : ""}</dt><dd>-{formatPrice(order.discount)}</dd>
             </div>
           )}
-          <div className="flex justify-between"><dt className="text-slate-500">Livraison</dt><dd>{order.shippingCost === 0 ? "Gratuite" : formatPrice(order.shippingCost)}</dd></div>
+          <div className="flex justify-between"><dt className="text-slate-600">Livraison</dt><dd>{order.shippingCost === 0 ? "Gratuite" : formatPrice(order.shippingCost)}</dd></div>
           {order.pointsEarned > 0 && (
-            <div className="flex justify-between"><dt className="text-slate-500">Points fidélité gagnés</dt><dd className="font-semibold text-para-700">+{order.pointsEarned}</dd></div>
+            <div className="flex justify-between"><dt className="text-slate-600">Points fidélité gagnés</dt><dd className="font-semibold text-para-700">+{order.pointsEarned}</dd></div>
           )}
           <div className="flex justify-between pt-1.5 text-base font-extrabold text-para-900"><dt>Total</dt><dd>{formatPrice(order.total)}</dd></div>
         </dl>
@@ -87,18 +87,18 @@ export default async function OrderConfirmationPage({
         {canView && (
           <div className="mt-5 grid gap-4 rounded-2xl bg-mint/60 p-4 text-sm sm:grid-cols-2">
             <div>
-              <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Livraison</h3>
+              <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-600">Livraison</h3>
               <p>{order.fullName}<br />{order.addressStreet}<br />{order.addressCity} {order.addressPostal ?? ""}<br />{order.phone}</p>
             </div>
             <div>
-              <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Paiement</h3>
+              <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-600">Paiement</h3>
               <p>Paiement à la livraison (espèces)</p>
             </div>
           </div>
         )}
 
         {!canView && (
-          <p className="mt-5 rounded-2xl bg-slate-50 p-4 text-center text-xs text-slate-500">
+          <p className="mt-5 rounded-2xl bg-slate-50 p-4 text-center text-xs text-slate-600">
             Connectez-vous au compte ayant passé cette commande, ou ouvrez le lien récapitulatif reçu par email pour voir les détails de livraison.
           </p>
         )}

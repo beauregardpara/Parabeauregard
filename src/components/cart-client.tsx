@@ -18,7 +18,7 @@ export function CartClient() {
       <div className="mx-auto max-w-2xl px-4 py-12 text-center lg:py-14">
         <span className="mx-auto grid h-20 w-20 place-items-center rounded-3xl bg-mint text-para-700 shadow-sm ring-1 ring-para-100" aria-hidden><ShoppingBag size={38} strokeWidth={1.5} /></span>
         <h1 className="mt-4 font-display text-2xl font-bold">Votre panier est vide</h1>
-        <p className="mt-2 text-slate-500">Découvrez nos best-sellers et promotions du moment.</p>
+        <p className="mt-2 text-slate-600">Découvrez nos best-sellers et promotions du moment.</p>
         <div className="mt-6 flex justify-center gap-3">
           <Link href="/" className="btn-shine btn-3d rounded-full bg-gradient-to-r from-para-500 to-para-700 px-7 py-3 font-semibold text-white">Boutique</Link>
           <Link href="/promotions" className="btn-3d rounded-full border border-para-300 px-7 py-3 font-semibold text-para-800">Promotions</Link>
@@ -47,7 +47,7 @@ export function CartClient() {
                   <span className="w-9 text-center text-sm font-bold">{i.qty}</span>
                   <button onClick={() => cart.setQty(i.productId, i.qty + 1)} aria-label="Augmenter la quantité"
                     className="btn-3d h-8 w-8 rounded-full border border-para-200 font-bold text-para-700 hover:bg-mint">+</button>
-                  <button onClick={() => cart.remove(i.productId)} className="ml-auto text-xs text-slate-500 transition hover:text-red-500">
+                  <button onClick={() => cart.remove(i.productId)} className="ml-auto text-xs text-slate-600 transition hover:text-red-500">
                     Supprimer
                   </button>
                 </div>
@@ -62,14 +62,14 @@ export function CartClient() {
             <h2 className="font-display text-lg font-bold text-para-900">Résumé</h2>
             <FreeShippingProgress subtotal={cart.subtotal} />
             <dl className="mt-4 space-y-1.5 text-sm">
-              <div className="flex justify-between"><dt className="text-slate-500">Sous-total</dt><dd>{formatPrice(cart.subtotal)}</dd></div>
-              <div className="flex justify-between"><dt className="text-slate-500">Livraison</dt><dd>{remaining <= 0 ? "Gratuite 🎉" : formatPrice(SHIPPING_FLAT_DH)}</dd></div>
+              <div className="flex justify-between"><dt className="text-slate-600">Sous-total</dt><dd>{formatPrice(cart.subtotal)}</dd></div>
+              <div className="flex justify-between"><dt className="text-slate-600">Livraison</dt><dd>{remaining <= 0 ? "Gratuite 🎉" : formatPrice(SHIPPING_FLAT_DH)}</dd></div>
             </dl>
             <Link href="/commander"
               className="btn-shine btn-3d mt-5 block rounded-full bg-gradient-to-r from-para-500 to-para-700 py-3.5 text-center font-bold text-white shadow-lift">
               Commander →
             </Link>
-            <p className="mt-3 text-center text-[11px] text-slate-500">Paiement à la livraison · Livraison gratuite dès 500 DH · Retours sous 7 jours</p>
+            <p className="mt-3 text-center text-[11px] text-slate-600">Paiement à la livraison · Livraison gratuite dès 500 DH · Retours sous 7 jours</p>
           </div>
         </aside>
       </div>

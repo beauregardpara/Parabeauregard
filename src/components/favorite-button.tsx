@@ -29,7 +29,7 @@ export function FavoriteButton({
         height="20"
         aria-hidden
         className={`${iconClassName} transition ${
-          active ? "fill-rose-500 text-rose-500" : "fill-transparent text-slate-500 hover:text-rose-500"
+          active ? "fill-rose-500 text-rose-500" : "fill-transparent text-slate-600 hover:text-rose-500"
         }`}
       >
         <path

@@ -52,7 +52,7 @@ export function PriceChart({ history }: { history: PriceChartPoint[] }) {
         />
         <circle cx={last.px} cy={last.py} r="4" fill="#0f766e" />
       </svg>
-      <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+      <div className="mt-2 flex items-center justify-between text-xs text-slate-600">
         <span>Min. {formatPrice(minY)}</span>
         <span className="font-semibold text-para-700">Actuel {formatPrice(last.y)}</span>
         <span>Max. {formatPrice(maxY)}</span>

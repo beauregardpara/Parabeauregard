@@ -16,7 +16,7 @@ export function ReputationSection({ reputation }: { reputation: ReputationSnapsh
           <Globe2 className="text-para-700" size={22} aria-hidden />
           <div>
             <h2 id="reputation-title" className="font-display text-xl font-bold text-para-900">Ce qu&apos;en dit le web</h2>
-            <p className="text-xs text-slate-500">Réputation web observée</p>
+            <p className="text-xs text-slate-600">Réputation web observée</p>
           </div>
         </div>
         <span className="rounded-full bg-para-50 px-3 py-1 text-sm font-bold text-para-800">{reputation.label ?? "Peu documentée"}</span>
@@ -29,7 +29,7 @@ export function ReputationSection({ reputation }: { reputation: ReputationSnapsh
             <span className="bg-slate-300" style={{ width: `${reputation.neutralPercent}%` }} />
             <span className="bg-coral-500" style={{ width: `${reputation.negativePercent}%` }} />
           </div>
-          <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-500">
+          <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-600">
             <span><b className="text-emerald-700">{reputation.positivePercent}%</b> positif</span>
             <span><b>{reputation.neutralPercent}%</b> neutre</span>
             <span><b className="text-coral-700">{reputation.negativePercent}%</b> négatif</span>
@@ -54,7 +54,7 @@ export function ReputationSection({ reputation }: { reputation: ReputationSnapsh
             <li key={source.url} className="rounded-xl bg-white p-3 text-sm ring-1 ring-para-100">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-semibold text-para-900">{source.title}</span>
-                <span className="text-xs text-slate-500">{source.domain}</span>
+                <span className="text-xs text-slate-600">{source.domain}</span>
               </div>
               {source.excerpt && <p className="mt-1 text-xs leading-relaxed text-slate-600">{source.excerpt}</p>}
               <a href={source.url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-para-700 hover:underline">Consulter la source <ExternalLink size={12} aria-hidden /></a>
@@ -62,7 +62,7 @@ export function ReputationSection({ reputation }: { reputation: ReputationSnapsh
           ))}
         </ul>
       </details>
-      <p className="mt-4 text-[11px] leading-relaxed text-slate-500">Cette synthèse est générée à partir de sources publiques disponibles sur le web et peut contenir des opinions subjectives.{stale ? " La dernière analyse est à actualiser." : ""}</p>
+      <p className="mt-4 text-[11px] leading-relaxed text-slate-600">Cette synthèse est générée à partir de sources publiques disponibles sur le web et peut contenir des opinions subjectives.{stale ? " La dernière analyse est à actualiser." : ""}</p>
     </section>
   );
 }

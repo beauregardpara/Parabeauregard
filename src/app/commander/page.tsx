@@ -105,7 +105,7 @@ export default function CheckoutPage() {
       <div className="mx-auto grid max-w-xl place-items-center px-4 py-28 text-center">
         <span className="text-6xl" aria-hidden>🛒</span>
         <h1 className="mt-4 font-display text-2xl font-bold">Votre panier est vide</h1>
-        <p className="mt-2 text-slate-500">Parcourez nos rayons pour trouver votre bonheur.</p>
+        <p className="mt-2 text-slate-600">Parcourez nos rayons pour trouver votre bonheur.</p>
         <Link href="/" className="btn-shine btn-3d mt-6 rounded-full bg-gradient-to-r from-para-500 to-para-700 px-7 py-3 font-semibold text-white">
           Retour à la boutique
         </Link>
@@ -130,15 +130,15 @@ export default function CheckoutPage() {
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="mb-1 block text-xs font-bold text-slate-500">Nom complet *</span>
+                <span className="mb-1 block text-xs font-bold text-slate-600">Nom complet *</span>
                 <input name="fullName" required placeholder="Ex. Salma Benali" className={inputCls} />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold text-slate-500">Téléphone *</span>
+                <span className="mb-1 block text-xs font-bold text-slate-600">Téléphone *</span>
                 <input name="phone" required type="tel" placeholder="06 XX XX XX XX" className={inputCls} />
               </label>
               <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-bold text-slate-500">Email</span>
+                <span className="mb-1 block text-xs font-bold text-slate-600">Email</span>
                 <input name="email" type="email" placeholder="vous@exemple.ma" className={inputCls} />
               </label>
             </div>
@@ -152,11 +152,11 @@ export default function CheckoutPage() {
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-bold text-slate-500">Adresse (rue, quartier…) *</span>
+                <span className="mb-1 block text-xs font-bold text-slate-600">Adresse (rue, quartier…) *</span>
                 <input name="street" required placeholder="12 rue des Orangers, Résidence X, Apt 3" className={inputCls} />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold text-slate-500">Ville *</span>
+                <span className="mb-1 block text-xs font-bold text-slate-600">Ville *</span>
                 <input name="city" required placeholder="Casablanca" value={city}
                   onChange={(e) => setCity(e.target.value)} list="delivery-cities" className={inputCls} />
                 <datalist id="delivery-cities">
@@ -171,11 +171,11 @@ export default function CheckoutPage() {
                 )}
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold text-slate-500">Code postal</span>
+                <span className="mb-1 block text-xs font-bold text-slate-600">Code postal</span>
                 <input name="postalCode" inputMode="numeric" placeholder="20000" className={inputCls} />
               </label>
               <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-bold text-slate-500">Instructions de livraison (optionnel)</span>
+                <span className="mb-1 block text-xs font-bold text-slate-600">Instructions de livraison (optionnel)</span>
                 <textarea name="notes" rows={2} placeholder="Appelez avant de livrer…" className={inputCls} />
               </label>
             </div>
@@ -191,7 +191,7 @@ export default function CheckoutPage() {
               <span className="text-3xl">💵</span>
               <div>
                 <p className="text-sm font-semibold text-slate-800">Paiement en espèces à la réception de votre colis.</p>
-                <p className="text-xs text-slate-500">Livraison {DELIVERY_CASABLANCA_H} à Casablanca, {DELIVERY_OTHER_H} ailleurs · offerte dès {threshold} DH d'achat.</p>
+                <p className="text-xs text-slate-600">Livraison {DELIVERY_CASABLANCA_H} à Casablanca, {DELIVERY_OTHER_H} ailleurs · offerte dès {threshold} DH d'achat.</p>
               </div>
             </div>
           </section>
@@ -230,11 +230,11 @@ export default function CheckoutPage() {
             </div>
 
             <dl className="mt-4 space-y-1.5 border-t border-dashed border-para-100 pt-4 text-sm">
-              <div className="flex justify-between"><dt className="text-slate-500">Sous-total</dt><dd>{formatPrice(cart.subtotal)}</dd></div>
+              <div className="flex justify-between"><dt className="text-slate-600">Sous-total</dt><dd>{formatPrice(cart.subtotal)}</dd></div>
               {discount > 0 && (
                 <div className="flex justify-between text-emerald-600"><dt>Réduction</dt><dd>-{formatPrice(discount)}</dd></div>
               )}
-              <div className="flex justify-between"><dt className="text-slate-500">Livraison</dt><dd>{shippingDisplay === 0 ? "Gratuite 🎉" : formatPrice(shippingDisplay)}</dd></div>
+              <div className="flex justify-between"><dt className="text-slate-600">Livraison</dt><dd>{shippingDisplay === 0 ? "Gratuite 🎉" : formatPrice(shippingDisplay)}</dd></div>
               <div className="mt-2 flex items-start justify-between border-t border-para-100 pt-2.5 text-sm text-emerald-700">
                 <dt className="flex items-center gap-1.5 font-semibold">
                   <span aria-hidden>⭐</span> Points fidélité à gagner
@@ -252,7 +252,7 @@ export default function CheckoutPage() {
               className="btn-shine btn-3d mt-4 w-full rounded-full bg-gradient-to-r from-para-500 to-para-700 py-3.5 font-bold text-white shadow-lift disabled:opacity-60">
               {pending ? "Traitement…" : `Confirmer la commande — ${formatPrice(totalDisplay)}`}
             </button>
-            <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-500">
+            <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-600">
               En validant, vous acceptez nos <Link href="/cgv" className="underline">CGV</Link>.
               Vos données sont protégées conformément à la loi 09-08.
             </p>

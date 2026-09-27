@@ -63,7 +63,7 @@ export default async function SuiviCommandesDetailPage({
     <div className="mx-auto max-w-3xl px-4 py-14">
       <div className="mb-6 text-center">
         <h1 className="font-display text-3xl font-extrabold text-para-950">Suivi de la commande</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-600">
           <strong className="text-para-800">{order.reference}</strong> · passée le {formatDate(order.createdAt)}
         </p>
       </div>
@@ -77,7 +77,7 @@ export default async function SuiviCommandesDetailPage({
         ) : order.status === "DELIVERED" ? (
           <p className="mt-1 text-sm text-emerald-600">Commande livrée. Merci pour votre confiance !</p>
         ) : (
-          <p className="mt-1 text-sm text-slate-500">Votre commande est en cours de traitement.</p>
+          <p className="mt-1 text-sm text-slate-600">Votre commande est en cours de traitement.</p>
         )}
       </div>
 
@@ -85,7 +85,7 @@ export default async function SuiviCommandesDetailPage({
       <section className="mt-8 rounded-3xl border border-para-100 bg-white p-6 shadow-sm" aria-label="Historique des statuts">
         <h2 className="mb-5 font-display text-lg font-bold text-para-900">Historique</h2>
         {order.statusHistory.length === 0 ? (
-          <p className="text-sm text-slate-500">Aucun événement enregistré pour le moment.</p>
+          <p className="text-sm text-slate-600">Aucun événement enregistré pour le moment.</p>
         ) : (
           <ol className="relative space-y-6 border-l-2 border-para-100 pl-6">
             {order.statusHistory.map((h) => {
@@ -104,9 +104,9 @@ export default async function SuiviCommandesDetailPage({
                     <strong className={`text-sm ${isLatest ? "text-para-800" : "text-slate-600"}`}>
                       {STATUS_ICON[h.to] ?? ""} {statusLabel(h.to)}
                     </strong>
-                    <time className="text-xs text-slate-500">{formatDate(h.createdAt)}</time>
+                    <time className="text-xs text-slate-600">{formatDate(h.createdAt)}</time>
                   </div>
-                  {h.note && <p className="mt-0.5 text-xs text-slate-500">{h.note}</p>}
+                  {h.note && <p className="mt-0.5 text-xs text-slate-600">{h.note}</p>}
                 </li>
               );
             })}
@@ -121,23 +121,23 @@ export default async function SuiviCommandesDetailPage({
           {order.items.map((i) => (
             <li key={i.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
               <Link href={`/produits/${i.productSlug}`} className="min-w-0 flex-1 truncate hover:text-para-700">
-                {i.productName} <span className="text-slate-500">× {i.quantity}</span>
+                {i.productName} <span className="text-slate-600">× {i.quantity}</span>
               </Link>
               <strong>{formatPrice(i.unitPrice * i.quantity)}</strong>
             </li>
           ))}
         </ul>
         <dl className="mt-4 space-y-1 border-t border-dashed border-para-100 pt-4 text-sm">
-          <div className="flex justify-between"><dt className="text-slate-500">Sous-total</dt><dd>{formatPrice(order.subtotal)}</dd></div>
+          <div className="flex justify-between"><dt className="text-slate-600">Sous-total</dt><dd>{formatPrice(order.subtotal)}</dd></div>
           {order.discount > 0 && (
             <div className="flex justify-between text-emerald-600">
               <dt>Réduction {order.couponCode ? `(${order.couponCode})` : ""}</dt><dd>-{formatPrice(order.discount)}</dd>
             </div>
           )}
-          <div className="flex justify-between"><dt className="text-slate-500">Livraison</dt><dd>{order.shippingCost === 0 ? "Gratuite" : formatPrice(order.shippingCost)}</dd></div>
+          <div className="flex justify-between"><dt className="text-slate-600">Livraison</dt><dd>{order.shippingCost === 0 ? "Gratuite" : formatPrice(order.shippingCost)}</dd></div>
           <div className="flex justify-between pt-1.5 text-base font-extrabold text-para-900"><dt>Total</dt><dd>{formatPrice(order.total)}</dd></div>
         </dl>
-        <p className="mt-4 rounded-2xl bg-slate-50 p-3 text-center text-xs text-slate-500">
+        <p className="mt-4 rounded-2xl bg-slate-50 p-3 text-center text-xs text-slate-600">
           Paiement à la livraison : {order.paid ? "encaissé ✅" : "à régler au livreur (espèces)"}
         </p>
       </section>

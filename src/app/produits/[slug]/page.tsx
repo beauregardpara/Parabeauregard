@@ -140,7 +140,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         }}
       />
 
-      <nav aria-label="Fil d'ariane" className="mb-6 text-xs text-slate-500">
+      <nav aria-label="Fil d'ariane" className="mb-6 text-xs text-slate-600">
         <Link href="/" className="hover:text-para-700">Accueil</Link>
         {p.category && (
           <>
@@ -163,7 +163,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <p className="mt-2 text-sm">
               <span className="text-amber-500">{"★".repeat(Math.round(avgRating))}</span>
               <span className="text-slate-300">{"★".repeat(5 - Math.round(avgRating))}</span>
-              <a href="#avis" className="ml-2 text-slate-500 hover:text-para-700">{p.reviews.length} avis</a>
+              <a href="#avis" className="ml-2 text-slate-600 hover:text-para-700">{p.reviews.length} avis</a>
             </p>
           )}
 
@@ -171,7 +171,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <span className="font-display text-4xl font-semibold text-para-800">{formatPrice(price)}</span>
             {discount !== null && (
               <>
-                <span className="text-xl text-slate-500 line-through">{formatPrice(p.price)}</span>
+                <span className="text-xl text-slate-600 line-through">{formatPrice(p.price)}</span>
                 <span className="badge-promo rounded-full px-3 py-1 text-sm font-extrabold text-white">-{discount}%</span>
               </>
             )}
@@ -192,13 +192,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <p className="flex items-center gap-2 font-semibold text-emerald-700">✓ En stock — expédié sous 24h</p>
               )
             ) : (
-              <p className="font-semibold text-slate-500">✕ Momentanément indisponible</p>
+              <p className="font-semibold text-slate-600">✕ Momentanément indisponible</p>
             )}
-            <p className="text-slate-500">
+            <p className="text-slate-600">
               🚚 Livraison {DELIVERY_CASABLANCA_H} à Casablanca, {DELIVERY_OTHER_H} ailleurs · offerte dès{" "}
               {FREE_SHIPPING_THRESHOLD_DH} DH
             </p>
-            <p className="text-slate-500">💵 Paiement à la livraison disponible</p>
+            <p className="text-slate-600">💵 Paiement à la livraison disponible</p>
           </div>
 
           <div className="mt-6 rounded-[1.5rem] border border-para-100 bg-white/70 p-4 shadow-sm">
@@ -226,7 +226,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
 
           {(p.sku || p.barcode) && (
-            <p className="mt-5 text-xs text-slate-500">
+            <p className="mt-5 text-xs text-slate-600">
               Réf. {p.sku ?? "—"} {p.barcode ? `· EAN ${p.barcode}` : ""}
             </p>
           )}
@@ -245,7 +245,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         {p.reviews.length > 0 && <aside id="avis" className="space-y-4">
           <h2 className="font-display text-xl font-bold text-para-900">
-            Avis clients <span className="text-slate-500">({p.reviews.length})</span>
+            Avis clients <span className="text-slate-600">({p.reviews.length})</span>
           </h2>
           {[...p.reviews]
             .sort((a, b) => Number(b.verifiedPurchase) - Number(a.verifiedPurchase))
@@ -288,7 +288,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {priceHistory.length === 0 && (
         <section className="mt-16">
           <h2 className="mb-6 font-display text-2xl font-extrabold text-para-950">Historique des prix</h2>
-          <p className="rounded-3xl border border-dashed border-para-200 bg-mint/40 p-6 text-center text-sm text-slate-500">
+          <p className="rounded-3xl border border-dashed border-para-200 bg-mint/40 p-6 text-center text-sm text-slate-600">
             Aucun historique disponible.
           </p>
         </section>
@@ -319,7 +319,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <RecentlyViewedSection excludeId={p.id} />
 
       {p.sourceUrl && (
-        <p className="mt-12 text-center text-[11px] text-slate-500">
+        <p className="mt-12 text-center text-[11px] text-slate-600">
           Fiche produit mise à jour automatiquement depuis nos partenaires ({p.sourceName}).
         </p>
       )}

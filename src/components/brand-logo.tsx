@@ -12,7 +12,7 @@ export function BrandLogo({
   return (
     <span className={`inline-flex items-center ${dark ? "rounded-xl bg-white p-1.5" : ""} ${className}`}>
       <Image
-        src="/brand/para-beauregard-official.webp"
+        src="/brand/para-beauregard-official-transparent.webp"
         alt="Parapharmacie Beauregard"
         width={compact ? 150 : 230}
         height={compact ? 40 : 62}

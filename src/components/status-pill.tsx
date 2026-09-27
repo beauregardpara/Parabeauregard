@@ -10,7 +10,7 @@ const STYLES: Record<string, string> = {
   CANCELLED: "bg-red-50 text-red-600",
   PENDING_REVIEW: "bg-amber-50 text-amber-700",
   PUBLISHED: "bg-emerald-50 text-emerald-700",
-  HIDDEN: "bg-slate-100 text-slate-500",
+  HIDDEN: "bg-slate-100 text-slate-600",
   PENDING: "bg-amber-50 text-amber-700",
   APPROVED: "bg-emerald-50 text-emerald-700",
   REJECTED: "bg-red-50 text-red-600",

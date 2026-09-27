@@ -36,7 +36,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <h1 className="text-center font-display text-2xl font-extrabold text-para-950">
           {mode === "login" ? "Connexion" : "Créer mon compte"}
         </h1>
-        <p className="mt-1 mb-6 text-center text-sm text-slate-500">
+        <p className="mt-1 mb-6 text-center text-sm text-slate-600">
           {mode === "login"
             ? "Retrouvez vos commandes et vos adresses."
             : "Suivez vos commandes et gagnez du temps à chaque achat."}
@@ -67,13 +67,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               onClick={() => setShowPassword((v) => !v)}
               aria-pressed={showPassword}
               aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-              className="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-xl text-slate-500 transition hover:text-para-700 focus-visible:text-para-700"
+              className="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-xl text-slate-600 transition hover:text-para-700 focus-visible:text-para-700"
             >
               <span aria-hidden>{showPassword ? "🙈" : "👁"}</span>
             </button>
           </div>
           {mode === "register" && (
-            <p className="px-1 text-xs text-slate-500">6 caractères minimum.</p>
+            <p className="px-1 text-xs text-slate-600">6 caractères minimum.</p>
           )}
           {error && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-600">{error}</p>}
           <button type="submit" disabled={pending}
@@ -87,7 +87,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             <Link href="/mot-de-passe/oublie" className="text-para-700 hover:underline">Mot de passe oublié ?</Link>
           </p>
         )}
-        <p className="mt-5 text-center text-sm text-slate-500">
+        <p className="mt-5 text-center text-sm text-slate-600">
           {mode === "login" ? (
             <>Pas encore de compte ?{" "}
               <Link href="/compte/inscription" className="font-bold text-para-700 hover:underline">Inscrivez-vous</Link>

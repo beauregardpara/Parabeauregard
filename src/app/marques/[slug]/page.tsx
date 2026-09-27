@@ -56,7 +56,7 @@ export default async function BrandPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
-      <nav aria-label="Fil d'ariane" className="mb-4 text-xs text-slate-500">
+      <nav aria-label="Fil d'ariane" className="mb-4 text-xs text-slate-600">
         <Link href="/" className="hover:text-para-700">Accueil</Link>
         <span className="mx-1.5">/</span>
         <Link href="/marques" className="hover:text-para-700">Nos marques</Link>
@@ -65,19 +65,19 @@ export default async function BrandPage({
       </nav>
 
       <header className="mb-8">
-        <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-para-500">Marque</p>
+        <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-para-600">Marque</p>
         <h1 className="mt-1 font-display text-3xl font-extrabold text-para-950 sm:text-4xl">{brand}</h1>
         <p className="mt-2 max-w-2xl text-slate-600">
           Tous les produits {brand} disponibles chez Para Beauregard, livrés partout au Maroc.
         </p>
-        <p className="mt-2 text-sm text-slate-500">{result.total} produit(s)</p>
+        <p className="mt-2 text-sm text-slate-600">{result.total} produit(s)</p>
       </header>
 
       {result.items.length === 0 ? (
         <div className="grid place-items-center rounded-3xl border border-dashed border-para-200 bg-mint/40 py-24 text-center">
           <span className="text-5xl" aria-hidden>🔍</span>
           <p className="mt-4 font-display text-lg font-bold text-para-900">Aucun produit trouvé</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Essayez d'élargir vos critères ou explorez une autre marque.
           </p>
         </div>

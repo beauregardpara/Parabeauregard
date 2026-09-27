@@ -85,7 +85,7 @@ export async function ProductListing({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
-      <nav aria-label="Fil d'ariane" className="mb-4 text-xs text-slate-500">
+      <nav aria-label="Fil d'ariane" className="mb-4 text-xs text-slate-600">
         <Link href="/" className="hover:text-para-700">Accueil</Link>
         <span className="mx-1.5">/</span>
         <span className="font-semibold text-para-800">{title}</span>
@@ -94,7 +94,7 @@ export async function ProductListing({
       <header className="mb-8">
         <h1 className="font-display text-3xl font-extrabold text-para-950 sm:text-4xl">{title}</h1>
         {subtitle && <p className="mt-2 max-w-2xl text-slate-600">{subtitle}</p>}
-        <p className="mt-2 text-sm text-slate-500">{result.total} produit(s)</p>
+        <p className="mt-2 text-sm text-slate-600">{result.total} produit(s)</p>
       </header>
 
       {/* Bande d'en-tête : identité Para Beauregard, sans visuel de produit
@@ -124,11 +124,11 @@ export async function ProductListing({
             <div className="grid place-items-center rounded-3xl border border-dashed border-para-200 bg-mint/40 py-24 text-center">
               <span className="text-5xl" aria-hidden>🔍</span>
               <p className="mt-4 font-display text-lg font-bold text-para-900">Aucun produit trouvé</p>
-              <p className="mt-1 text-sm text-slate-500">Essayez d'élargir vos filtres ou explorez une autre catégorie.</p>
+              <p className="mt-1 text-sm text-slate-600">Essayez d'élargir vos filtres ou explorez une autre catégorie.</p>
             </div>
           ) : (
             <>
-              <div className="mb-4 flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
+              <div className="mb-4 flex flex-wrap items-center justify-end gap-2 text-xs text-slate-600">
                 <span>Produits par page :</span>
                 {choices.map((c) => {
                   const actif = c.param === perPageParam;
@@ -149,7 +149,7 @@ export async function ProductListing({
                 })}
               </div>
               {isAll && result.total > 200 && (
-                <p className="mb-4 text-right text-[11px] text-slate-500">
+                <p className="mb-4 text-right text-[11px] text-slate-600">
                   {result.total} produits chargés d’un coup : l’affichage peut être lent en mobile.
                 </p>
               )}
@@ -174,7 +174,7 @@ export async function ProductListing({
                   )}
                   {paginationItems(result.page, result.pages).map((item, i) =>
                     item === "…" ? (
-                      <span key={`gap-${i}`} aria-hidden className="px-1 text-slate-500">
+                      <span key={`gap-${i}`} aria-hidden className="px-1 text-slate-600">
                         …
                       </span>
                     ) : (

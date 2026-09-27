@@ -1,300 +1,160 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowRight, Check, Send } from "lucide-react";
 import { db } from "@/lib/db";
 import { Hero } from "@/components/hero";
-import { Reveal, TiltCard, CountUp } from "@/components/motion";
+import { Reveal } from "@/components/motion";
 import { ProductCard } from "@/components/product-card";
-import { RecentlyViewedSection } from "@/components/recently-viewed-section";
-import { FREE_SHIPPING_THRESHOLD_DH, RETURN_DAYS } from "@/lib/constants";
-import { slugify } from "@/lib/format";
 import { AssistantCta } from "@/components/assistant-cta";
 
-export const metadata: Metadata = {
-  // Canonical déclaré page par page (jamais dans le layout racine, qui le
-  // ferait hériter par toutes les pages).
-  alternates: { canonical: "/" },
-};
-
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 export const revalidate = 60;
 
+const UNIVERS = [
+  { href: "/categories/soins-visage", label: "Soins visage", image: "/images/premium/univers/soins-visage-produits.webp" },
+  { href: "/recherche?q=soins%20corps", label: "Soins corps", image: "/images/premium/univers/body.webp" },
+  { href: "/categories/soins-cheveux", label: "Cheveux", image: "/images/premium/univers/soins-cheveux-produits.webp" },
+  { href: "/categories/bebe-maman", label: "Bébé & Maman", image: "/images/premium/univers/bebe-maman-produits.webp" },
+  { href: "/categories/hygiene-corps", label: "Hygiène", image: "/images/premium/univers/hygiene-corps-produits.webp" },
+  { href: "/recherche?q=compléments", label: "Compléments", emoji: "💊" },
+  { href: "/recherche?q=solaire", label: "Solaire", emoji: "☀️" },
+  { href: "/recherche?q=homme", label: "Hommes", image: "/images/premium/univers/men.webp" },
+  { href: "/recherche?q=nature%20bio", label: "Nature & Bio", image: "/images/premium/univers/wellness.webp" },
+  { href: "/marques", label: "Nos marques", emoji: "🌿" },
+] as const;
+
 export default async function HomePage() {
-  const [parents, featured, promos, news, productCount, topBrandRows, brandRows, testimonials] = await Promise.all([
-    db.category.findMany({ where: { parentId: null, visible: true }, orderBy: { order: "asc" }, take: 8 }),
+  const [featuredRows, promoRows, productCount, brandRows] = await Promise.all([
     db.product.findMany({
       where: { status: "PUBLISHED" },
-      // Mise en avant éditoriale d'abord, puis les meilleures ventes réelles.
       orderBy: [{ isFeatured: "desc" }, { soldCount: "desc" }, { id: "asc" }],
-      take: 8,
-      include: { images: { orderBy: { order: "asc" }, take: 1 } },
+      take: 6,
+      include: {
+        images: { orderBy: { order: "asc" }, take: 1 },
+        reviews: { where: { status: "APPROVED" }, select: { rating: true } },
+      },
     }),
     db.product.findMany({
       where: { status: "PUBLISHED", promoPrice: { not: null } },
       orderBy: { updatedAt: "desc" },
-      take: 4,
-      include: { images: { orderBy: { order: "asc" }, take: 1 } },
-    }),
-    db.product.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { createdAt: "desc" },
-      take: 4,
+      take: 24,
       include: { images: { orderBy: { order: "asc" }, take: 1 } },
     }),
     db.product.count({ where: { status: "PUBLISHED" } }),
-    // Marques réellement présentes, les mieux fournies d'abord.
-    db.product.groupBy({
-      by: ["brand"],
-      where: { status: "PUBLISHED", brand: { not: null } },
-      _count: { _all: true },
-      orderBy: { _count: { brand: "desc" } },
-      take: 10,
-    }),
-    db.product.findMany({
-      where: { status: "PUBLISHED", brand: { not: null } },
-      select: { brand: true },
-      distinct: ["brand"],
-    }),
-    // Témoignages : uniquement de vrais avis approuvés en base.
-    db.review.findMany({
-      where: { status: "APPROVED", comment: { not: null }, rating: { gte: 4 } },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-      select: { id: true, author: true, rating: true, comment: true, verifiedPurchase: true },
-    }),
+    db.product.findMany({ where: { status: "PUBLISHED", brand: { not: null } }, select: { brand: true }, distinct: ["brand"] }),
   ]);
 
   const brandCount = brandRows.length;
-  const topBrands = topBrandRows.map((r) => r.brand).filter((b): b is string => Boolean(b));
-  const universeImages: Record<string, string> = {
-    "soins-visage": "/images/premium/univers/face.webp",
-    "soins-cheveux": "/images/premium/univers/hair.webp",
-    "hygiene-corps": "/images/premium/univers/body.webp",
-    "bebe-maman": "/images/premium/univers/baby.webp",
-    "nature-bien-etre": "/images/premium/univers/wellness.webp",
-    hommes: "/images/premium/univers/men.webp",
-  };
+  const featured = featuredRows.map(({ reviews, ...product }) => ({
+    ...product,
+    avgRating: reviews.length ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : null,
+    reviewsCount: reviews.length,
+  }));
+  const solaire = promoRows.find((product) => /solaire|spf|sun|soleil/i.test(product.name)) ?? promoRows[0] ?? null;
+  const remiseSolaire = solaire?.promoPrice && solaire.promoPrice < solaire.price
+    ? Math.round((1 - solaire.promoPrice / solaire.price) * 100)
+    : 0;
 
   return (
     <>
       <Hero stats={{ productCount, brandCount }} />
 
-      {/* Catégories */}
-      {parents.length > 0 && <section className="mx-auto max-w-7xl px-4 py-16">
-        <Reveal className="mb-8 text-center">
-          <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-para-500">Nos univers</p>
-          <h2 className="mt-1 font-display text-3xl font-extrabold text-para-950">Le soin, dans toutes ses dimensions</h2>
-        </Reveal>
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-          {parents.map((c, i) => (
-            <Reveal key={c.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
-              <TiltCard>
-                <Link href={`/categories/${c.slug}`}
-                  className="glow-border group relative block overflow-hidden rounded-3xl border border-para-100 bg-gradient-to-br from-white to-mint shadow-sm">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-mint">
-                    {universeImages[c.slug] || c.imageUrl ? (
-                      <Image src={universeImages[c.slug] || c.imageUrl!} alt={c.name} fill sizes="(max-width:640px) 45vw, 280px" className="object-cover transition-transform duration-500 group-hover:scale-110" />
-                    ) : (
-                      <span className="absolute inset-0 grid place-items-center text-6xl transition-transform duration-500 group-hover:scale-125 group-hover:-rotate-6">{c.icon ?? "🧴"}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between px-4 py-3.5">
-                    <h3 className="font-display text-sm font-bold text-para-900 sm:text-base">{c.name}</h3>
-                    <span className="text-para-500 transition-transform duration-300 group-hover:translate-x-1.5">→</span>
-                  </div>
-                </Link>
-              </TiltCard>
-            </Reveal>
+      <section aria-label="Nos univers" className="border-y border-para-100/80 bg-[#f6f2e8]">
+        <div className="container-page flex gap-5 overflow-x-auto py-6 xl:justify-between xl:overflow-visible">
+          {UNIVERS.map((universe) => (
+            <Link key={universe.label} href={universe.href} className="group flex w-[88px] shrink-0 flex-col items-center gap-2 text-center">
+              <span className="grid h-[74px] w-[74px] place-items-center overflow-hidden rounded-full bg-[#f2ecdf] shadow-sm ring-1 ring-para-200/60 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-lift">
+                {"image" in universe ? (
+                  <Image src={universe.image} alt="" width={148} height={148} sizes="74px" className="h-full w-full object-cover" />
+                ) : (
+                  <span aria-hidden className="text-[30px]">{universe.emoji}</span>
+                )}
+              </span>
+              <span className="text-[12px] font-medium leading-tight text-para-950">{universe.label}</span>
+            </Link>
           ))}
         </div>
-      </section>}
+      </section>
 
-      {/* Bandeau chiffres animés */}
-      <section className="mx-auto max-w-7xl px-4 pb-4">
+      <section aria-label="Nos sélections" className="container-page grid gap-4 py-7 md:grid-cols-3">
         <Reveal>
-          <div className="shadow-deep relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-para-800 via-para-700 to-para-950 px-6 py-10 text-white sm:px-12">
-            <div aria-hidden className="aurora opacity-40" />
-            <dl className="relative grid grid-cols-2 gap-8 text-center md:grid-cols-4">
-              {[
-                { v: productCount, suffix: "", label: "références au catalogue", d: 0 },
-                { v: brandCount, suffix: "", label: "marques référencées", d: 0 },
-                { v: FREE_SHIPPING_THRESHOLD_DH, suffix: " DH", label: "livraison offerte dès", d: 0 },
-                { v: RETURN_DAYS, suffix: " j", label: "pour changer d'avis", d: 0 },
-              ].map((s) => (
-                <div key={s.label}>
-                  <dd className="font-display text-3xl font-extrabold text-white sm:text-4xl">
-                    <CountUp to={s.v} suffix={s.suffix} decimals={s.d} />
-                  </dd>
-                  <dt className="mt-1 text-xs font-semibold uppercase tracking-wide text-para-100/80 sm:text-sm">{s.label}</dt>
-                </div>
-              ))}
-            </dl>
-          </div>
+          <article className="relative h-[210px] overflow-hidden rounded-[1.65rem] bg-[#e9ebd9] shadow-sm">
+            <Image src="/images/premium/hero/botanical-scene.webp" alt="" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover opacity-55" />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-[#edf0df] via-[#edf0df]/95 to-transparent" />
+            <div className="relative z-10 max-w-[60%] p-6">
+              <h2 className="font-display text-[22px] leading-[1.05] text-para-950">Nos soins solaires</h2>
+              <p className="mt-1 text-sm text-para-900">pour un été en toute sérénité</p>
+              {remiseSolaire > 0 && <p className="mt-3 font-display text-[38px] leading-none text-para-950">-{remiseSolaire}%</p>}
+              <Link href="/recherche?q=solaire" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-para-800 px-5 text-xs font-semibold text-white hover:bg-para-900">Voir la sélection <ArrowRight size={14} aria-hidden /></Link>
+            </div>
+            {solaire?.images[0]?.url && <Image src={solaire.images[0].url} alt={solaire.name} width={260} height={300} sizes="180px" className="absolute bottom-0 right-1 h-[88%] w-[45%] object-contain drop-shadow-xl" />}
+          </article>
+        </Reveal>
+
+        <Reveal delay={1}>
+          <article className="relative h-[210px] overflow-hidden rounded-[1.65rem] bg-[#e8eadf] shadow-sm">
+            <Image src="/images/premium/campaign/healthy-skin.webp" alt="Femme appliquant un soin du visage" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-[#f5f1e7] via-[#f5f1e7]/88 to-transparent" />
+            <div className="relative z-10 max-w-[58%] p-6">
+              <h2 className="font-display text-[22px] leading-[1.05] text-para-950">Une peau plus saine<br />dès aujourd&apos;hui</h2>
+              <p className="mt-3 text-xs leading-relaxed text-para-900">Découvrez notre sélection dermocosmétique</p>
+              <Link href="/categories/soins-visage" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-para-800 px-5 text-xs font-semibold text-white hover:bg-para-900">Découvrir <ArrowRight size={14} aria-hidden /></Link>
+            </div>
+          </article>
+        </Reveal>
+
+        <Reveal delay={2}>
+          <article className="relative h-[210px] overflow-hidden rounded-[1.65rem] bg-[#f5e7dc] shadow-sm">
+            <Image src="/images/premium/campaign/maman-bebe.webp" alt="Bébé souriant enveloppé dans une serviette" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-[#fbf1e8] via-[#fbf1e8]/90 to-transparent" />
+            <div className="relative z-10 max-w-[58%] p-6">
+              <h2 className="font-display text-[22px] leading-tight text-coral-800">Maman &amp; Bébé</h2>
+              <p className="mt-3 text-xs leading-relaxed text-para-900">Tout le nécessaire pour leur bien-être au quotidien</p>
+              <Link href="/categories/bebe-maman" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-para-800 px-5 text-xs font-semibold text-white hover:bg-para-900">Voir la sélection <ArrowRight size={14} aria-hidden /></Link>
+            </div>
+          </article>
         </Reveal>
       </section>
 
-      {/* Best-sellers */}
       {featured.length > 0 && (
-        <section className="bg-mint/50 py-16">
-          <div className="mx-auto max-w-7xl px-4">
-            <Reveal className="mb-8 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-para-500">Les préférés de nos clients</p>
-                <h2 className="mt-1 font-display text-3xl font-extrabold text-para-950">Best-sellers</h2>
-              </div>
-              <Link href="/nouveautes" className="text-sm font-bold text-para-700 hover:text-para-900">Tout voir →</Link>
-            </Reveal>
-            <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-              {featured.map((p, i) => (
-                <Reveal key={p.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
-                  <ProductCard p={{ ...p, imageUrl: p.images[0]?.url ?? null }} />
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Promotions */}
-      {promos.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-16">
-          <Reveal className="mb-8 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-coral-600">Offres limitées</p>
-              <h2 className="mt-1 font-display text-3xl font-extrabold text-para-950">Promotions du moment</h2>
-            </div>
-            <Link href="/promotions" className="text-sm font-bold text-coral-600 hover:text-coral-600/80">Toutes les promos →</Link>
+        <section className="container-page pb-8 pt-2">
+          <Reveal className="mb-5 flex items-end justify-between gap-4">
+            <div><p className="text-[10px] font-bold uppercase tracking-[0.28em] text-para-600">Nos produits phares</p><h2 className="mt-1 font-display text-3xl leading-tight text-para-950">Les incontournables de nos clients</h2></div>
+            <Link href="/nouveautes" className="shrink-0 text-xs font-semibold text-para-800 hover:text-para-950">Tout voir →</Link>
           </Reveal>
-          <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-            {promos.map((p, i) => (
-              <Reveal key={p.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
-                <ProductCard p={{ ...p, imageUrl: p.images[0]?.url ?? null }} />
-              </Reveal>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+            {featured.map((product, index) => (
+              <Reveal key={product.id} delay={(index % 4) as 0 | 1 | 2 | 3}><ProductCard p={{ ...product, imageUrl: product.images[0]?.url ?? null }} /></Reveal>
             ))}
           </div>
         </section>
       )}
 
-      {/* Nouveautés */}
-      {news.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-16">
-          <Reveal className="mb-8">
-            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-para-500">Fraîchement arrivés</p>
-            <h2 className="mt-1 font-display text-3xl font-extrabold text-para-950">Nouveautés</h2>
-          </Reveal>
-          <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-            {news.map((p, i) => (
-              <Reveal key={p.id} delay={(i % 4) as 0 | 1 | 2 | 3}>
-                <ProductCard p={{ ...p, imageUrl: p.images[0]?.url ?? null }} />
-              </Reveal>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <RecentlyViewedSection />
-
-      {/* Marques */}
-      {topBrands.length > 0 && <section className="overflow-hidden border-y border-para-100 bg-white py-10">
-        <p className="mb-6 text-center text-xs font-extrabold uppercase tracking-[0.25em] text-slate-500">
-          Les marques que nous aimons
-        </p>
-        <div className="marquee-track gap-14 pr-14">
-          {[...Array(2)].flatMap((_, k) =>
-            topBrands.map((b) => (
-              <Link
-                key={`${k}-${b}`}
-                href={`/marques/${slugify(b)}`}
-                aria-hidden={k === 1 ? true : undefined}
-                tabIndex={k === 1 ? -1 : undefined}
-                className="whitespace-nowrap font-display text-xl font-bold text-para-900/55 transition hover:text-para-700"
-              >
-                {b}
-              </Link>
-            ))
-          )}
-        </div>
-      </section>}
-
-      {/* Bandeau assistant IA */}
-      <section className="mx-auto max-w-7xl px-4 py-16">
+      <section className="container-page py-7">
         <Reveal>
-          <div className="scene">
-            <div className="preserve-3d card-3d mesh-bg relative overflow-hidden rounded-[2rem] border border-para-100 p-8 shadow-soft sm:p-12">
-              <div aria-hidden className="blob absolute -right-20 -top-20 h-72 w-72 bg-coral-400/30" />
-              <div id="assistant" className="relative grid items-center gap-8 lg:grid-cols-[1.1fr_.9fr]">
-                <div>
-                  <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-coral-600">Votre conseillère beauté</p>
-                  <h2 className="mt-2 font-display text-2xl font-extrabold text-para-950 sm:text-3xl">
-                    Une question sur votre routine ?
-                  </h2>
-                  <p className="mt-3 text-slate-600">
-                    Notre assistant vous aide à trouver les produits adaptés à vos besoins, à partir des données réelles du catalogue.
-                  </p>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {["Peau sensible", "Hydratation", "Solaire", "Cheveux", "Bébé"].map((suggestion) => (
-                      <span key={suggestion} className="rounded-full border border-para-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-para-700">{suggestion}</span>
-                    ))}
-                  </div>
-                  <div className="mt-6"><AssistantCta /></div>
-                </div>
-
-                {/* Visuel éditorial local de l'assistant : pas d'URL distante. */}
-                <div className="preserve-3d relative hidden overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/60 shadow-lift lg:block" aria-hidden>
-                  <Image src="/images/premium/assistant/assistant-beaute-premium.webp" alt="" width={900} height={900} className="h-72 w-full object-cover" />
-                  <div className="absolute bottom-4 left-4 rounded-2xl bg-white/90 px-4 py-3 text-sm text-para-900 shadow-soft backdrop-blur">
-                    <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-coral-600">Conseil personnalisé</span>
-                    Votre rituel, pensé avec soin.
-                  </div>
-                </div>
+          <div id="assistant" className="relative isolate min-h-[250px] overflow-hidden rounded-[1.8rem] bg-[#f3efe4] shadow-sm">
+            <Image src="/images/premium/campaign/pharmacienne.webp" alt="Pharmacienne Para Beauregard" fill sizes="100vw" className="-z-20 object-cover object-left" />
+            <div aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,transparent_0%,rgba(246,242,232,.82)_32%,rgba(246,242,232,.96)_58%,rgba(246,242,232,.88)_100%)]" />
+            <div className="grid min-h-[250px] items-center gap-6 p-6 md:grid-cols-[220px_1fr_300px] lg:grid-cols-[280px_1fr_330px] lg:p-8">
+              <div aria-hidden />
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-para-600">Un doute ? Une question ?</p>
+                <h2 className="mt-2 font-display text-2xl leading-[1.05] text-para-950 lg:text-3xl">Nos pharmaciens vous conseillent en temps réel</h2>
+                <ul className="mt-4 grid gap-2 text-xs text-para-900">
+                  {["Conseils personnalisés", "Recommandations adaptées à votre peau", "Réponse rapide via notre chat"].map((item) => <li key={item} className="flex items-center gap-2"><Check className="h-4 w-4 text-para-700" aria-hidden />{item}</li>)}
+                </ul>
+                <div className="mt-5"><AssistantCta /></div>
+              </div>
+              <div className="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-lift backdrop-blur-sm" aria-hidden>
+                <div className="flex items-center gap-2.5"><span className="relative h-8 w-8 overflow-hidden rounded-full bg-para-100"><Image src="/images/premium/campaign/pharmacienne.webp" alt="" fill sizes="32px" className="object-cover object-left" /></span><span className="text-[11px] leading-tight"><strong className="block text-para-950">Conseillère Para Beauregard</strong><span className="text-para-600">● En ligne</span></span></div>
+                <p className="mt-3 rounded-2xl rounded-bl-sm bg-para-50 px-3.5 py-2.5 text-[11px] leading-relaxed text-para-900">Bonjour ! Comment puis-je vous aider aujourd&apos;hui ?</p>
+                <div className="mt-3 flex items-center gap-2 rounded-full border border-para-200 bg-white py-1.5 pl-4 pr-1.5"><span className="flex-1 text-[11px] text-para-900/70">Posez votre question…</span><span className="grid h-7 w-7 place-items-center rounded-full bg-para-800 text-white"><Send size={12} aria-hidden /></span></div>
               </div>
             </div>
           </div>
         </Reveal>
       </section>
-
-      {/* Témoignages — uniquement de vrais avis approuvés (aucun avis inventé). */}
-      {testimonials.length > 0 && (
-        <section className="bg-mint/50 py-16">
-          <div className="mx-auto max-w-7xl px-4">
-            <Reveal className="mb-8 text-center">
-              <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-para-500">Ils nous font confiance</p>
-              <h2 className="mt-1 font-display text-3xl font-extrabold text-para-950">Avis de nos clients</h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Avis publiés après modération par notre équipe.
-              </p>
-            </Reveal>
-            <div className="grid gap-5 md:grid-cols-3">
-              {testimonials.map((t, i) => (
-                <Reveal key={t.id} delay={(i % 3) as 0 | 1 | 2}>
-                  <TiltCard intensity={7}>
-                    <figure className="shine-card relative flex h-full flex-col rounded-3xl border border-para-100 bg-white p-6 shadow-sm">
-                      <p className="text-sm text-amber-500" role="img" aria-label={`${t.rating} étoiles sur 5`}>
-                        <span aria-hidden>
-                          {"★".repeat(t.rating)}
-                          <span className="text-slate-300">{"★".repeat(5 - t.rating)}</span>
-                        </span>
-                      </p>
-                      <blockquote className="mt-3 flex-1 text-sm leading-relaxed text-slate-600">« {t.comment} »</blockquote>
-                      <figcaption className="mt-4 flex items-center gap-3 border-t border-para-50 pt-4">
-                        <span aria-hidden className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-para-100 to-mint font-display font-extrabold text-para-700">
-                          {t.author.charAt(0).toUpperCase()}
-                        </span>
-                        <span>
-                          <strong className="block text-sm text-para-900">{t.author}</strong>
-                          {t.verifiedPurchase && (
-                            <span className="text-xs text-slate-500">Achat vérifié ✓</span>
-                          )}
-                        </span>
-                      </figcaption>
-                    </figure>
-                  </TiltCard>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
     </>
   );
 }

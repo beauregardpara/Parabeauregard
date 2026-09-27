@@ -15,37 +15,39 @@
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-display: ui-serif, Georgia, Cambria, "Times New Roman", serif;
 
-  /* Primary palette: forest green, sage and warm ivory. */
-  --color-para-50: #f4f8f1;
-  --color-para-100: #e9efe6;
-  --color-para-200: #dde7dc;
-  --color-para-300: #c8d6c8;
-  --color-para-400: #a6bca9;
-  --color-para-500: #4f806c;
-  --color-para-600: #1b5546;
-  --color-para-700: #174a3d;
-  --color-para-800: #123f36;
-  --color-para-900: #0f342e;
-  --color-para-950: #0b2823;
+  /* Palette principale : verts de la parapharmacie, du feuillage clair au
+     vert profond des bandeaux. Les teintes 600 a 950 sont lisibles en texte
+     courant sur le creme ; la 500 sert aux icones et aux grands titres. */
+  --color-para-50: #f6f9f4;
+  --color-para-100: #e9f0e4;
+  --color-para-200: #d8e6cc;
+  --color-para-300: #b8cfae;
+  --color-para-400: #8fb083;
+  --color-para-500: #487051;
+  --color-para-600: #3f6a48;
+  --color-para-700: #2f5638;
+  --color-para-800: #1f4d33;
+  --color-para-900: #1b3a2b;
+  --color-para-950: #13301c;
 
-  --color-mint: #fdf6f1;
-  /* Burgundy is an accent, reserved for emotional/promotional moments. */
-  --color-coral-50: #fff6f3;
-  --color-coral-100: #fae7df;
-  --color-coral-200: #f3d9cd;
-  --color-coral-300: #e9c1b4;
-  --color-coral-400: #d98d85;
-  --color-coral-500: #b63a51;
-  --color-coral-600: #a52e45;
-  --color-coral-700: #8e2e3d;
-  --color-coral-800: #7a2431;
-  --color-coral-900: #651e2a;
-  --color-coral-950: #4d171f;
+  --color-mint: #f6f2e8;
+  /* Accent promotionnel : prix barres, pastilles de remise. */
+  --color-coral-50: #fdf1ef;
+  --color-coral-100: #fadfda;
+  --color-coral-200: #f5c6bd;
+  --color-coral-300: #eda294;
+  --color-coral-400: #dd6e5a;
+  --color-coral-500: #c33f2f;
+  --color-coral-600: #c0392b;
+  --color-coral-700: #a32f23;
+  --color-coral-800: #86281e;
+  --color-coral-900: #6d2119;
+  --color-coral-950: #4a1610;
 
-  --shadow-soft: 0 18px 45px rgba(18, 63, 54, 0.12);
-  --shadow-lift: 0 24px 60px -16px rgba(18, 63, 54, 0.22);
-  --shadow-glow: 0 0 60px -10px rgba(198, 164, 106, 0.28);
-  --shadow-card: 0 2px 6px -2px rgba(18, 63, 54, 0.06), 0 12px 28px -12px rgba(18, 63, 54, 0.12);
+  --shadow-soft: 0 18px 45px rgba(20, 48, 31, 0.10);
+  --shadow-lift: 0 24px 60px -16px rgba(20, 48, 31, 0.20);
+  --shadow-glow: 0 0 60px -10px rgba(79, 122, 88, 0.30);
+  --shadow-card: 0 2px 6px -2px rgba(20, 48, 31, 0.05), 0 12px 28px -12px rgba(20, 48, 31, 0.11);
   --radius-card: 1.5rem;
 }
 
@@ -56,8 +58,8 @@ html {
 }
 
 body {
-  background: #fff9f6;
-  color: #202b28;
+  background: #f4f1e7;
+  color: #22301f;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }

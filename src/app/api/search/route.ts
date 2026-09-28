@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { searchTermsForQuery } from "@/lib/search/synonyms";
+import { searchTermsForQuery, searchWordGroupsForQuery } from "@/lib/search/synonyms";
 import { foldForSearch } from "@/lib/product-name";
 import { productTextWhere } from "@/lib/search/text-filter";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/security/rate-limit";
@@ -46,12 +46,27 @@ export async function GET(req: NextRequest) {
   }
 
   const foldedQuery = foldForSearch(q);
-  const compactQuery = foldedQuery.replace(/s+/g, "");
-  function relevance(product: { searchText: string | null }): number {
+  // Variante sans espaces : « l oreal » doit aussi remonter en tapant « loreal ».
+  const compactQuery = foldedQuery.replace(/\s+/g, "");
+  // Les mots saisis, sans leurs synonymes : un synonyme aide a trouver la fiche,
+  // pas a la classer devant une fiche qui porte le mot exact.
+  const mots = searchWordGroupsForQuery(q).map((groupe) => groupe[0]);
+
+  /**
+   * Classe une suggestion. Depuis que les mots peuvent etre saisis dans
+   * n'importe quel ordre, la requete entiere ne se retrouve plus telle quelle
+   * dans la fiche : sans le palier « tous les mots dans le nom », une fiche dont
+   * seul le descriptif mentionne les mots passait devant le produit cherche.
+   */
+  function relevance(product: { name: string; brand: string | null; searchText: string | null }): number {
     const text = product.searchText ?? "";
     if (!foldedQuery) return 0;
-    if (text.startsWith(foldedQuery)) return 3;
-    if (text.includes(foldedQuery)) return 2;
+    if (text.startsWith(foldedQuery)) return 5;
+    if (text.includes(foldedQuery)) return 4;
+
+    const intitule = foldForSearch(`${product.brand ?? ""} ${product.name}`);
+    if (mots.length > 0 && mots.every((mot) => intitule.includes(mot))) return 3;
+    if (mots.length > 0 && mots.some((mot) => intitule.includes(mot))) return 2;
     if (compactQuery && text.includes(compactQuery)) return 1;
     return 0;
   }

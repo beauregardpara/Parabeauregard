@@ -21,10 +21,34 @@ const PAGES = [
 
 const WIDTHS = [375, 430, 768, 1024, 1440];
 
+/**
+ * Panier de test, pose avant le chargement de la page.
+ *
+ * Indispensable : visitees avec un panier vide, `/panier` et `/commander` ne
+ * rendent qu'un message, et leur mise en page reelle n'etait jamais mesuree.
+ * C'est ainsi qu'un debordement de 143 px sur la page de commande est passe
+ * inapercu — le nom de produit tronque, donc insecable, y poussait la grille
+ * a 502 px sur un ecran de 375.
+ */
+const PANIER = [
+  {
+    productId: 1,
+    slug: "produit-au-nom-volontairement-tres-long-pour-le-test",
+    name: "Un produit dont le nom est volontairement très long pour éprouver la mise en page",
+    imageUrl: null,
+    price: 324,
+    qty: 2,
+    maxStock: -1,
+  },
+];
+
 test.describe("Responsive", () => {
   for (const width of WIDTHS) {
     test(`aucun débordement horizontal à ${width} px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
+      await page.addInitScript((panier) => {
+        try { localStorage.setItem("pb_cart_v1", JSON.stringify(panier)); } catch {}
+      }, PANIER);
       // On neutralise les animations (marquee, apparitions) : elles déplacent
       // les éléments et rendraient la mesure de mise en page instable.
       await page.emulateMedia({ reducedMotion: "reduce" });

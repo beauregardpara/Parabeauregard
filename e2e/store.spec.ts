@@ -78,7 +78,11 @@ test.describe("Site public", () => {
     const response = await page.goto("/recherche?q=creme");
     expect(response?.status()).toBe(200);
     await expect(page.getByRole("heading", { name: /Résultats pour/ })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByPlaceholder(/Rechercher un produit/)).toBeVisible();
+    // Deux champs portent ce libelle — celui de l'en-tete et celui en pleine
+    // largeur — et un seul est affiche selon la largeur de la fenetre.
+    await expect(
+      page.getByRole("combobox", { name: "Rechercher un produit" }).filter({ visible: true })
+    ).toHaveCount(1);
   });
 
   test("la recherche ignore l'ordre des mots", async ({ page }) => {

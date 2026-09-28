@@ -31,7 +31,10 @@ export function CartClient() {
     <div className="mx-auto max-w-5xl px-4 py-10">
       <h1 className="mb-8 font-display text-3xl font-extrabold text-para-950">Mon panier ({cart.count})</h1>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+      {/* `min-w-0` sur les cellules : sans cela, le nom de produit tronque —
+          donc insecable — impose sa largeur entiere a la grille et fait
+          deborder la page sur mobile. */}
+      <div className="grid gap-8 lg:grid-cols-[1fr_340px] [&>*]:min-w-0">
         <ul className="divide-y divide-para-50 rounded-3xl border border-para-100 bg-white shadow-sm">
           {cart.items.map((i) => (
             <li key={i.productId} className="flex gap-4 p-4 sm:p-5">

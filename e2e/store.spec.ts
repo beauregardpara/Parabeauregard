@@ -10,12 +10,16 @@ test.describe("Site public", () => {
   test("les assets éditoriaux premium répondent et se rendent réellement", async ({ page, request }) => {
     const assets = [
       "/images/premium/hero/hero-skincare-desktop.webp",
-      "/images/premium/univers/face.webp",
-      "/images/premium/univers/hair.webp",
-      "/images/premium/univers/body.webp",
-      "/images/premium/univers/baby.webp",
-      "/images/premium/univers/wellness.webp",
-      "/images/premium/univers/men.webp",
+      "/images/premium/univers/soins-visage-produits.webp",
+      "/images/premium/univers/soins-corps-produits.webp",
+      "/images/premium/univers/soins-cheveux-produits.webp",
+      "/images/premium/univers/bebe-maman-produits.webp",
+      "/images/premium/univers/hygiene-corps-produits.webp",
+      "/images/premium/univers/complements-produits.webp",
+      "/images/premium/univers/solaire-produits.webp",
+      "/images/premium/univers/hommes-produits.webp",
+      "/images/premium/univers/nature-bio-produits.webp",
+      "/images/premium/univers/marques-produits.webp",
       "/images/premium/assistant/assistant-beaute-premium.webp",
       "/images/premium/about/about-para.webp",
       "/images/premium/campaigns/campaign-sun-care.webp",
@@ -74,7 +78,24 @@ test.describe("Site public", () => {
     const response = await page.goto("/recherche?q=creme");
     expect(response?.status()).toBe(200);
     await expect(page.getByRole("heading", { name: /Résultats pour/ })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByPlaceholder(/Rechercher un produit/)).toBeVisible();
+    // Deux champs portent ce libelle — celui de l'en-tete et celui en pleine
+    // largeur — et un seul est affiche selon la largeur de la fenetre.
+    await expect(
+      page.getByRole("combobox", { name: "Rechercher un produit" }).filter({ visible: true })
+    ).toHaveCount(1);
+  });
+
+  test("la recherche ignore l'ordre des mots", async ({ page }) => {
+    // Régression : les mots devaient auparavant apparaître dans cet ordre exact,
+    // si bien que « hydratante crème » ne renvoyait aucun résultat.
+    const compte = async (q: string) => {
+      await page.goto(`/recherche?q=${encodeURIComponent(q)}`, { waitUntil: "domcontentloaded" });
+      await expect(page.getByRole("heading", { name: /Résultats pour/ })).toBeVisible({ timeout: 15_000 });
+      return page.locator("article").count();
+    };
+    const ordonne = await compte("creme hydratante");
+    test.skip(ordonne === 0, "catalogue de test sans crème hydratante");
+    expect(await compte("hydratante creme")).toBe(ordonne);
   });
 
   test("le contact affiche les coordonnées officielles", async ({ page }) => {

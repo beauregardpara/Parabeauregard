@@ -11,17 +11,19 @@ import { AssistantCta } from "@/components/assistant-cta";
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 export const revalidate = 60;
 
+// Chaque vignette est composee de vrais packshots du catalogue
+// (scripts/univers-selection.mjs puis scripts/univers-vignettes.mjs).
 const UNIVERS = [
   { href: "/categories/soins-visage", label: "Soins visage", image: "/images/premium/univers/soins-visage-produits.webp" },
-  { href: "/recherche?q=soins%20corps", label: "Soins corps", image: "/images/premium/univers/body.webp" },
+  { href: "/recherche?q=soins%20corps", label: "Soins corps", image: "/images/premium/univers/soins-corps-produits.webp" },
   { href: "/categories/soins-cheveux", label: "Cheveux", image: "/images/premium/univers/soins-cheveux-produits.webp" },
   { href: "/categories/bebe-maman", label: "Bébé & Maman", image: "/images/premium/univers/bebe-maman-produits.webp" },
   { href: "/categories/hygiene-corps", label: "Hygiène", image: "/images/premium/univers/hygiene-corps-produits.webp" },
-  { href: "/recherche?q=compléments", label: "Compléments", emoji: "💊" },
-  { href: "/recherche?q=solaire", label: "Solaire", emoji: "☀️" },
-  { href: "/recherche?q=homme", label: "Hommes", image: "/images/premium/univers/men.webp" },
-  { href: "/recherche?q=nature%20bio", label: "Nature & Bio", image: "/images/premium/univers/wellness.webp" },
-  { href: "/marques", label: "Nos marques", emoji: "🌿" },
+  { href: "/recherche?q=compléments", label: "Compléments", image: "/images/premium/univers/complements-produits.webp" },
+  { href: "/recherche?q=solaire", label: "Solaire", image: "/images/premium/univers/solaire-produits.webp" },
+  { href: "/recherche?q=homme", label: "Hommes", image: "/images/premium/univers/hommes-produits.webp" },
+  { href: "/recherche?q=nature%20bio", label: "Nature & Bio", image: "/images/premium/univers/nature-bio-produits.webp" },
+  { href: "/marques", label: "Nos marques", image: "/images/premium/univers/marques-produits.webp" },
 ] as const;
 
 export default async function HomePage() {
@@ -65,11 +67,7 @@ export default async function HomePage() {
           {UNIVERS.map((universe) => (
             <Link key={universe.label} href={universe.href} className="group flex w-[88px] shrink-0 flex-col items-center gap-2 text-center">
               <span className="grid h-[74px] w-[74px] place-items-center overflow-hidden rounded-full bg-[#f2ecdf] shadow-sm ring-1 ring-para-200/60 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-lift">
-                {"image" in universe ? (
-                  <Image src={universe.image} alt="" width={148} height={148} sizes="74px" className="h-full w-full object-cover" />
-                ) : (
-                  <span aria-hidden className="text-[30px]">{universe.emoji}</span>
-                )}
+                <Image src={universe.image} alt="" width={148} height={148} sizes="74px" className="h-full w-full object-cover" />
               </span>
               <span className="text-[12px] font-medium leading-tight text-para-950">{universe.label}</span>
             </Link>

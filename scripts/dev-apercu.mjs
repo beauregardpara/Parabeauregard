@@ -29,6 +29,9 @@ const enfant = spawn(
       SUPABASE_URL: "http://localhost:54321",
       SUPABASE_SECRET_KEY: "apercu-local",
       NEXT_PUBLIC_SITE_URL: `http://localhost:${port}`,
+      // Dossier de build dedie : un build autonome deja lance verrouille
+      // `.next/standalone`, et `next dev` ne demarre alors jamais.
+      NEXT_DIST_DIR: `.next-apercu-${port}`,
     },
   }
 );

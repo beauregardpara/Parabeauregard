@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
-import { Baby, BadgeCheck, Bath, ChevronDown, CreditCard, HeartHandshake, Leaf, Menu, MessageCircle, PersonStanding, Pill, ScanFace, Search,
+import { Baby, BadgeCheck, Bath, ChevronDown, CreditCard, HeartHandshake, Leaf, Menu, MessageCircle, PersonStanding, Pill, ScanFace,
   ShoppingBag, Store, Sun, Truck, UserRound, Waves, X } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { FreeShippingProgress } from "@/components/free-shipping-progress";
 import { formatPrice } from "@/lib/format";
+import { SearchBar } from "@/components/search-bar";
 import { useEscapeClose } from "@/lib/use-escape-close";
 
 /** Bandeau de service : les garanties rappelees en haut de chaque page. */
@@ -41,47 +41,14 @@ export type NavCategory = {
   children: { id: number; name: string; slug: string; icon: string | null }[];
 };
 
-type Suggestion = { id: number; name: string; slug: string; brand: string | null; imageUrl: string | null; price: number; promoPrice: number | null };
-
-type SearchSuggestionsResponse = { query?: string; terms?: string[]; suggestions?: Suggestion[] };
-
 export function Header({ categories }: { categories: NavCategory[] }) {
-  const router = useRouter();
-  const [q, setQ] = useState("");
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [showSug, setShowSug] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
-  const boxRef = useRef<HTMLDivElement>(null);
   const catRef = useRef<HTMLDivElement>(null);
   const cart = useCart();
 
   useEscapeClose(catOpen, () => setCatOpen(false));
   useEscapeClose(mobileOpen, () => setMobileOpen(false));
-
-  useEffect(() => {
-    if (!q.trim()) { setSuggestions([]); return; }
-    const t = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=6`);
-        if (res.ok) {
-          const data = (await res.json()) as SearchSuggestionsResponse;
-          setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
-        } else {
-          setSuggestions([]);
-        }
-      } catch {}
-    }, 220);
-    return () => clearTimeout(t);
-  }, [q]);
-
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setShowSug(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -90,13 +57,6 @@ export function Header({ categories }: { categories: NavCategory[] }) {
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
-
-  const submitSearch = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!q.trim()) return;
-    setShowSug(false);
-    router.push(`/recherche?q=${encodeURIComponent(q.trim())}`);
-  };
 
   return (
     <header className="sticky top-0 z-40">
@@ -125,48 +85,7 @@ export function Header({ categories }: { categories: NavCategory[] }) {
           />
         </Link>
 
-        {/* Recherche */}
-        <div ref={boxRef} className="relative hidden flex-1 lg:block">
-          <form onSubmit={submitSearch} role="search">
-            <div className="relative mx-auto w-full max-w-xl">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-para-600" size={18} aria-hidden />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                onFocus={() => setShowSug(true)}
-                placeholder="Rechercher un produit, une marque, un besoin…"
-                className="w-full rounded-full border border-para-200 bg-white py-2.5 pl-11 pr-14 text-sm outline-none transition placeholder:text-para-900/45 focus:border-para-500"
-                aria-label="Rechercher un produit"
-              />
-              <button
-                type="submit"
-                className="absolute right-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-para-800 text-white transition hover:bg-para-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-para-900"
-                aria-label="Lancer la recherche"
-              >
-                <Search size={15} strokeWidth={2.2} aria-hidden />
-              </button>
-            </div>
-          </form>
-          {showSug && suggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-para-200/70 bg-white shadow-xl">
-              {suggestions.map((s) => (
-                <Link key={s.id} href={`/produits/${s.slug}`} onClick={() => setShowSug(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-para-50">
-                  <span className="relative h-11 w-11 overflow-hidden rounded-lg border border-para-100 bg-para-50">
-                    {s.imageUrl && <Image src={s.imageUrl} alt="" fill sizes="44px" className="object-cover" />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{s.name}</span>
-                    <span className="text-xs text-slate-600">{s.brand}</span>
-                  </span>
-                  <span className="text-sm font-bold text-para-700">
-                    {formatPrice(s.promoPrice ?? s.price)}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+        <SearchBar variant="inline" />
 
         <nav className="ml-auto hidden items-center gap-1 md:flex" aria-label="Navigation principale">
           <div ref={catRef} className="relative"
@@ -236,13 +155,10 @@ export function Header({ categories }: { categories: NavCategory[] }) {
           ))}
         </nav>
 
-      {/* Recherche mobile */}
-      <div className="border-t border-para-100/60 px-4 py-2 md:hidden">
-        <form onSubmit={submitSearch} role="search" className="flex items-center rounded-full border border-para-200 bg-[#fffdfb]">
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher…"
-            className="w-full bg-transparent px-4 py-2 text-sm outline-none" aria-label="Rechercher un produit" />
-          <button type="submit" className="px-4 text-base" aria-label="Lancer la recherche">🔍</button>
-        </form>
+      {/* Recherche hors bureau : la barre en ligne n'apparait qu'a 1024 px,
+          cette rangee couvre tout ce qui est en dessous. */}
+      <div className="border-t border-para-100/60 px-4 py-2 lg:hidden">
+        <SearchBar variant="bloc" />
       </div>
       </div>
       </div>

@@ -33,6 +33,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
 
+  // Permet a un apercu local de compiler dans son propre dossier : le build de
+  // production autonome verrouille `.next/standalone`, ce qui empeche un
+  // `next dev` de demarrer en parallele sur le meme poste.
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
+
   // Sortie autonome : image Docker minimale (voir Dockerfile).
   output: "standalone",
 

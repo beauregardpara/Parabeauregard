@@ -47,3 +47,6 @@ next-env.d.ts
 /*.zip
 
 .vercel
+
+# Dossiers de build des aperçus locaux (scripts/dev-apercu.mjs)
+.next-apercu-*

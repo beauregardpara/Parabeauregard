@@ -79,6 +79,8 @@ const FOND = Buffer.from(`<svg width="${W}" height="${H}">
   <ellipse cx="${W/2}" cy="${SOL + 18}" rx="${W*0.43}" ry="32" fill="#dcc9ad" opacity="0.30"/>
 </svg>`);
 
+// Le cadrage rond rogne les bords : les flacons lateraux restent etroits et
+// rentres, et on prefere des silhouettes hautes, qu'un cercle ne tranche pas.
 const PLACES = [
   { hMax: 510, wMax: Math.round(W * 0.26), cx: Math.round(W * 0.205) },
   { hMax: 630, wMax: Math.round(W * 0.32), cx: Math.round(W * 0.5) },
@@ -91,8 +93,13 @@ for (const [slug, v] of Object.entries(sel)) {
   const couches = [];
   for (let i = 0; i < 3; i++) {
     const p = ordre[i], pl = PLACES[i];
-    const u = p.url.startsWith("http") ? p.url : "http://localhost:3100" + p.url;
-    const decoupe = await detourer(Buffer.from(await (await fetch(u)).arrayBuffer()));
+    // Les chemins relatifs sont servis depuis public/ : les lire sur le disque
+    // evite d'avoir a demarrer le serveur de developpement pour composer les
+    // vignettes.
+    const source = p.url.startsWith("http")
+      ? Buffer.from(await (await fetch(p.url)).arrayBuffer())
+      : fs.readFileSync(path.join("public", p.url));
+    const decoupe = await detourer(source);
     const redim = await sharp(decoupe)
       .resize({ width: pl.wMax, height: pl.hMax, fit: "inside", withoutEnlargement: false })
       .png().toBuffer();

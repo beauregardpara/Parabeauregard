@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { normalize, searchTermsForQuery } from "@/lib/search/synonyms";
+import { searchTermsForQuery, searchWordGroupsForQuery } from "@/lib/search/synonyms";
 import { foldForSearch } from "@/lib/product-name";
+import { productTextWhere } from "@/lib/search/text-filter";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/security/rate-limit";
 
 export async function GET(req: NextRequest) {
@@ -22,41 +23,50 @@ export async function GET(req: NextRequest) {
   const q = (searchParams.get("q") ?? "").trim().slice(0, 200);
   if (!q) return NextResponse.json({ query: q, terms: [], suggestions: [] });
 
-  const terms = searchTermsForQuery(q, 16);
-  const effectiveTerms = terms.length > 0 ? terms : [normalize(q)];
-
-  const where: Prisma.ProductWhereInput = {
-    status: "PUBLISHED",
-    // `searchText` est replié (sans accents) : « avene » doit suggérer « Avène ».
-    OR: effectiveTerms.flatMap((t) => {
-      const folded = foldForSearch(t);
-      return [
-        ...(folded ? [{ searchText: { contains: folded } }] : []),
-        { name: { contains: t } },
-        { brand: { contains: t } },
-        { shortDescription: { contains: t } },
-        { description: { contains: t } },
-      ];
-    }),
-  };
+  const effectiveTerms = searchTermsForQuery(q, 16);
 
   // On élargit la sélection puis on classe par pertinence : trier uniquement
   // sur les ventes faisait remonter des best-sellers sans rapport avec la
   // requête (« roge cavailles » proposait un soin Eucerin).
-  const candidates = await db.product.findMany({
-    where,
-    orderBy: [{ soldCount: "desc" }, { isFeatured: "desc" }],
-    take: 48,
-    include: { images: { orderBy: { order: "asc" }, take: 1 } },
-  });
+  const fetch = (where: Prisma.ProductWhereInput) =>
+    db.product.findMany({
+      where: { status: "PUBLISHED", ...where },
+      orderBy: [{ soldCount: "desc" }, { isFeatured: "desc" }],
+      take: 48,
+      include: { images: { orderBy: { order: "asc" }, take: 1 } },
+    });
+
+  // D'abord les fiches contenant *tous* les mots saisis, dans n'importe quel
+  // ordre ; à défaut seulement, celles qui n'en contiennent qu'une partie.
+  const strict = productTextWhere(q, "strict");
+  let candidates = strict ? await fetch(strict) : [];
+  if (candidates.length === 0) {
+    const loose = productTextWhere(q, "loose");
+    if (loose) candidates = await fetch(loose);
+  }
 
   const foldedQuery = foldForSearch(q);
-  const compactQuery = foldedQuery.replace(/s+/g, "");
-  function relevance(product: { searchText: string | null }): number {
+  // Variante sans espaces : « l oreal » doit aussi remonter en tapant « loreal ».
+  const compactQuery = foldedQuery.replace(/\s+/g, "");
+  // Les mots saisis, sans leurs synonymes : un synonyme aide a trouver la fiche,
+  // pas a la classer devant une fiche qui porte le mot exact.
+  const mots = searchWordGroupsForQuery(q).map((groupe) => groupe[0]);
+
+  /**
+   * Classe une suggestion. Depuis que les mots peuvent etre saisis dans
+   * n'importe quel ordre, la requete entiere ne se retrouve plus telle quelle
+   * dans la fiche : sans le palier « tous les mots dans le nom », une fiche dont
+   * seul le descriptif mentionne les mots passait devant le produit cherche.
+   */
+  function relevance(product: { name: string; brand: string | null; searchText: string | null }): number {
     const text = product.searchText ?? "";
     if (!foldedQuery) return 0;
-    if (text.startsWith(foldedQuery)) return 3;
-    if (text.includes(foldedQuery)) return 2;
+    if (text.startsWith(foldedQuery)) return 5;
+    if (text.includes(foldedQuery)) return 4;
+
+    const intitule = foldForSearch(`${product.brand ?? ""} ${product.name}`);
+    if (mots.length > 0 && mots.every((mot) => intitule.includes(mot))) return 3;
+    if (mots.length > 0 && mots.some((mot) => intitule.includes(mot))) return 2;
     if (compactQuery && text.includes(compactQuery)) return 1;
     return 0;
   }

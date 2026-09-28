@@ -95,3 +95,27 @@ export function searchTermsForQuery(q: string, maxTerms = 20): string[] {
   }
   return terms;
 }
+/**
+ * Découpe une requête en groupes de mots : un groupe par mot utile de la
+ * requête, contenant ce mot et ses synonymes. Contrairement à
+ * `searchTermsForQuery`, la structure est conservée, ce qui permet d'exiger que
+ * *chaque* mot de la requête soit présent (ET entre les groupes, OU à
+ * l'intérieur) : « moussant gel » doit trouver « Gel Moussant Purifiant ».
+ */
+export function searchWordGroupsForQuery(q: string, maxWords = 8): string[][] {
+  const cleaned = normalize(q).replace(/[^\p{L}\p{N}\s-]/gu, " ");
+  const words = cleaned
+    .split(/\s+/)
+    .filter((w) => w.length >= 2 && !STOPWORDS.has(w));
+
+  const groups: string[][] = [];
+  const seen = new Set<string>();
+  for (const word of words) {
+    if (seen.has(word)) continue;
+    seen.add(word);
+    const expanded = expandKeywords(word);
+    if (expanded.length > 0) groups.push(expanded);
+    if (groups.length >= maxWords) break;
+  }
+  return groups;
+}

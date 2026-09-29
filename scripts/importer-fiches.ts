@@ -112,7 +112,7 @@ const RAYONS: [RegExp, string][] = [
   [/gelule|comprime|capsule|ampoule buvable|complement/i, "complements-alimentaires"],
   [/eau micellaire|demaquillant|nettoyant|gel moussant|lotion nettoyante|mousse/i, "nettoyants-demaquillants"],
   [/anti[- ]?age|rides?|fermete|anti[- ]?taches?|pigment|eclat|blanchissant/i, "anti-age"],
-  [/douche|corps|mains|pieds|deodorant|savon|hygiene/i, "hygiene-corps"],
+  [/douche|bain|gel lavant|huile lavante|corps|mains|pieds|deodorant|savon|hygiene/i, "hygiene-corps"],
   [/creme|baume|hydratant|emollient|lait/i, "cremes-hydratantes"],
 ];
 

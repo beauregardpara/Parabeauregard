@@ -77,3 +77,14 @@ Ces références existaient déjà : aucun doublon n'a été créé.
 - La Roche-Posay Sérum B5 — Cicaplast pris pour Hyalu B5
 - Cetaphil Lotion Hydratante peaux très sèches — nettoyant pris pour une lotion hydratante
 - BioKap Coloration rapide — ligne generique prise pour une teinte
+
+## Eucerin — passe dédiée (41 références du tableau)
+
+- 21 figuraient déjà au catalogue,
+- 10 ont été créées,
+- 2 existaient sous un libellé sans le nom de gamme (Sun Hydro Protect, Sun Photoaging Control),
+- 3 restent introuvables chez les quatre revendeurs :
+
+  - Eucerin Sun Crème Visage SPF50+ (50 ml)
+  - Eucerin Sun Spray Transparent SPF50+ (200 ml)
+  - Eucerin AtopiControl Émollient Corps (—)

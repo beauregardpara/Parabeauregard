@@ -14,7 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { PrismaClient } from "@prisma/client";
-import { formatProductName, productSlugSource, buildSearchText } from "../src/lib/product-name";
+import { formatProductName, productSlugSource, buildSearchText, foldForSearch } from "../src/lib/product-name";
 import { slugify } from "../src/lib/format";
 import { randomUUID } from "node:crypto";
 
@@ -26,7 +26,7 @@ type Fiche = {
   prixMin: number | null;
   prixMax: number | null;
   ligne: number;
-  revendeur: { nom: string; url: string };
+  revendeur: { nom: string; url: string; boutique?: string };
   fiche: { nom: string; prix: number; description: string; fichier: string };
 };
 
@@ -67,6 +67,9 @@ chargerEnv({ path: ".env.local", override: true });
 chargerEnv({ path: ".env" });
 
 const dossier = process.argv[2];
+// Le nom du fichier est un parametre : un second lot, issu d'autres
+// revendeurs, se prepare dans le meme dossier.
+const nomFichier = process.argv.find((a) => a.startsWith("--fiches="))?.split("=")[1] ?? "fiches.json";
 const ecrire = process.argv.includes("--ecrire");
 
 /** Decrit la base visee sans jamais divulguer d'identifiants. */
@@ -94,23 +97,48 @@ if (!dossier) {
  */
 const RAYONS: [RegExp, string][] = [
   [/\bspf|solaire|photoderm|anthelios|ecran\b/i, "protection-solaire"],
-  [/dentifrice|bain de bouche|brosse a dents?|brossette|interdental|fil dentaire|gencive|aphte/i, "hygiene-corps"],
+  [/dentifrice|bain de bouche|brosse a dents?|brossette|interdental|fil dentaire|gencive|aphte|afta|ortho/i, "bucco-dentaire"],
+  [/deodorant|anti[- ]?transpirant|detranspirant/i, "deodorants"],
+  [/rasage|rasoir|apres[- ]rasage|barbe|epilation|depilatoire/i, "rasage-epilation"],
+  [/hygiene intime|soin lavant.*intime|gel intime/i, "hygiene-intime"],
   [/shampoing|shampooing/i, "shampoings"],
   [/anti[- ]?chute|anticaduta/i, "anti-chute"],
   [/cheveux|capillaire|coloration|keratine/i, "soins-cheveux"],
   [/bebe|abcderm|change|liniment|nourrisson/i, "bebe-maman"],
-  [/gelule|comprime|capsule|ampoule buvable|complement/i, "complements-alimentaires"],
-  [/vitamine|magnesium|zinc|omega|collagene|spiruline/i, "vitamines"],
+  // Du plus precis au plus general : « Vitamine D3 60 capsules » appartient
+  // aux vitamines, pas au rayon generique des complements.
   [/minceur|drainant|brule/i, "minceur"],
+  [/vitamine|magnesium|zinc|omega|collagene|spiruline|probiotique/i, "vitamines"],
+  [/gelule|comprime|capsule|ampoule buvable|complement/i, "complements-alimentaires"],
   [/eau micellaire|demaquillant|nettoyant|gel moussant|lotion nettoyante|mousse/i, "nettoyants-demaquillants"],
   [/anti[- ]?age|rides?|fermete|anti[- ]?taches?|pigment|eclat|blanchissant/i, "anti-age"],
-  [/douche|corps|mains|pieds|deodorant|savon|hygiene/i, "hygiene-corps"],
+  [/douche|bain|gel lavant|huile lavante|corps|mains|pieds|deodorant|savon|hygiene/i, "hygiene-corps"],
   [/creme|baume|hydratant|emollient|lait/i, "cremes-hydratantes"],
 ];
 
 function rayonDe(nom: string): string {
-  for (const [regle, slug] of RAYONS) if (regle.test(nom)) return slug;
+  // Le libelle est replie avant d'etre teste : « Brosse a Dent » accentue
+  // echappait a la regle et finissait au rayon visage.
+  const replie = foldForSearch(nom);
+  for (const [regle, slug] of RAYONS) if (regle.test(replie)) return slug;
   return "soins-visage";
+}
+
+/**
+ * Assainit un texte venu d'un revendeur.
+ *
+ * Les descriptions sont converties depuis du HTML : il y subsiste des
+ * caracteres de controle et des antislashs isoles. Un seul d'entre eux, dans
+ * une fiche Eucerin, a fait echouer l'ecriture de tout un lot.
+ */
+function nettoyerTexte(t: string): string {
+  return t
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ")
+    .replace(/[\uD800-\uDFFF]/g, "")
+    .split(String.fromCharCode(92)).join(" ")
+    .replace(/[ \t]+/g, " ")
+    .trim();
 }
 
 /** Coupe la description a une longueur lisible, sur une fin de phrase. */
@@ -121,10 +149,13 @@ function resume(description: string, max = 180): string {
   return (point > 80 ? coupe.slice(0, point + 1) : `${coupe.trimEnd()}…`).trim();
 }
 
+/** Pictogrammes decoratifs ajoutes par les revendeurs aux libelles. */
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2190}-\u{27BF}\u{FE0F}]/gu;
+
 const db = new PrismaClient();
 
 async function main() {
-  const fiches: Fiche[] = JSON.parse(fs.readFileSync(path.join(dossier, "fiches.json"), "utf8"));
+  const fiches: Fiche[] = JSON.parse(fs.readFileSync(path.join(dossier, nomFichier), "utf8"));
   console.log(`${fiches.length} fiches a traiter — ${ecrire ? "ECRITURE REELLE" : "simulation"}\n`);
   console.log(`base : ${cible.libelle}
 `);
@@ -137,8 +168,12 @@ async function main() {
 
   for (const f of fiches) {
     const marque = f.marque;
-    const nom = formatProductName(f.fiche.nom, marque);
-    const slug = slugify(productSlugSource(nom, marque));
+    // Les revendeurs ajoutent parfois un pictogramme promotionnel au libelle,
+    // et n'ecrivent pas toujours la marque en tete alors que tout le catalogue
+    // le fait.
+    const libelle = nettoyerTexte(f.fiche.nom.replace(EMOJI, "")).replace(/\s+/g, " ");
+    const nom = productSlugSource(formatProductName(libelle, marque), marque);
+    const slug = slugify(nom);
 
     const existant = await db.product.findUnique({ where: { slug }, select: { id: true } });
     if (existant) { ignores.push(`${slug} (deja au catalogue)`); continue; }
@@ -149,6 +184,7 @@ async function main() {
     // Le prix vient de la fiche du revendeur, jamais d'une moyenne calculee sur
     // la fourchette du fichier : on ne publie que des montants reellement
     // pratiques. La fourchette ne sert qu'a detecter une aberration.
+    const description = nettoyerTexte(f.fiche.description);
     const prix = f.fiche.prix;
     if (f.prixMin != null && f.prixMax != null && (prix < f.prixMin * 0.5 || prix > f.prixMax * 2)) {
       ignores.push(`${slug} (prix ${prix} DH hors fourchette ${f.prixMin}-${f.prixMax})`);
@@ -157,7 +193,7 @@ async function main() {
 
     if (!ecrire) {
       console.log(`  + ${nom}`);
-      console.log(`      ${marque} | ${rayon} | ${prix} DH | ${f.fiche.description.length} car.`);
+      console.log(`      ${marque} | ${rayon} | ${prix} DH | ${description.length} car.`);
       crees++;
       continue;
     }
@@ -167,16 +203,16 @@ async function main() {
         name: nom,
         slug,
         brand: marque,
-        shortDescription: resume(f.fiche.description),
-        description: f.fiche.description,
+        shortDescription: resume(description),
+        description,
         price: prix,
         status: "PUBLISHED",
         unlimitedStock: true,
         categoryId,
-        searchText: buildSearchText([nom, marque, f.fiche.description.slice(0, 400)]),
-        sourceName: "universparadiscount.ma",
+        searchText: buildSearchText([nom, marque, description.slice(0, 400)]),
+        sourceName: f.revendeur.boutique ?? "universparadiscount.ma",
         sourceUrl: f.revendeur.url,
-        sourceId: `upd-${f.ligne}`,
+        sourceId: `${(f.revendeur.boutique ?? "upd").split(".")[0]}-${f.ligne}`,
         lastScrapedAt: new Date(),
         lastSeenAt: new Date(),
       },

@@ -19,8 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      # Valeurs publiques, surchargeables par des « variables » GitHub (pas de secret ici).
-      HEALTH_URL: ${{ vars.PRODUCTION_HEALTH_URL || 'https://para-beauregard.vercel.app/api/health' }}
+      # Le domaine canonique est la source de vérité de la production actuelle.
+      # Une variable GitHub peut toujours le surcharger lors d'une migration planifiée.
+      HEALTH_URL: ${{ vars.PRODUCTION_HEALTH_URL || 'https://parabeauregard.com/api/health' }}
       MIN_PRODUCTS: ${{ vars.PRODUCTION_MIN_PRODUCTS || '550' }}
       EXPECTED_VERSION: ${{ vars.PRODUCTION_EXPECTED_VERSION || '' }}
     steps:

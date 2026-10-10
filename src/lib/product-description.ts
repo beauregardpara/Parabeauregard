@@ -21,6 +21,28 @@ const UI_ARTIFACTS = [
   "Rupture de stock",
 ];
 
+/** Classes et bibliothèques CSS parfois récupérées par les scrapers au lieu
+ * du texte visible (Elementor/WordPress et widgets associés). */
+const TECHNICAL_TOKENS = /(?:elementor|e-con|e-flex|e-child|wp-block|woocommerce|swiper|slick|fa-)[a-z0-9_.-]*/gi;
+
+function decodeBasicEntities(text: string): string {
+  const named: Record<string, string> = {
+    "&nbsp;": " ",
+    "&amp;": "&",
+    "&quot;": '"',
+    "&#39;": "'",
+    "&apos;": "'",
+    "&lt;": "<",
+    "&gt;": ">",
+  };
+  return text
+    .replace(/&(?:nbsp|amp|quot|apos|lt|gt);|&#39;/gi, (entity) => named[entity.toLowerCase()] ?? entity)
+    .replace(/&#(\d+);/g, (_, code: string) => {
+      const value = Number(code);
+      return Number.isSafeInteger(value) ? String.fromCodePoint(value) : " ";
+    });
+}
+
 /**
  * Nettoie une description brute.
  * @returns le texte nettoyé, ou `null` s'il ne reste rien d'exploitable.
@@ -29,6 +51,17 @@ export function cleanDescription(raw: string | null | undefined): string | null 
   if (!raw) return null;
 
   let text = raw.replace(/\r\n?/g, "\n");
+
+  // Certains scrapers récupèrent le HTML ou les classes CSS au lieu du texte
+  // visible. Les retirer avant la normalisation évite de publier du code
+  // Elementor dans la fiche produit.
+  text = text
+    .replace(/<!--(?:.|\n|\r)*?-->/g, " ")
+    .replace(/<(script|style|svg|noscript|template)\b[^>]*>(?:.|\n|\r)*?<\/\1>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\b(?:class|style|data-[a-z0-9_-]+|aria-[a-z0-9_-]+)\s*=\s*["'][^"']*["']/gi, " ")
+    .replace(TECHNICAL_TOKENS, " ");
+  text = decodeBasicEntities(text);
 
   // Retrait des libellés d'interface, y compris collés au texte voisin.
   for (const artifact of UI_ARTIFACTS) {

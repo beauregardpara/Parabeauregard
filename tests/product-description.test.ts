@@ -7,6 +7,15 @@ describe("cleanDescription", () => {
     expect(cleanDescription("Crème apaisante Ajouter au panier")).toBe("Crème apaisante");
   });
 
+  it("retire le HTML et les classes techniques Elementor", () => {
+    const raw = '<div class="elementor-element e-con-inner"><p>Hydrate la peau.</p><span>Lire la suite</span></div>';
+    expect(cleanDescription(raw)).toBe("Hydrate la peau.");
+  });
+
+  it("décode les entités HTML simples", () => {
+    expect(cleanDescription("Soin &amp; confort&nbsp;quotidien")).toBe("Soin & confort quotidien");
+  });
+
   it("normalise les espaces et les lignes vides", () => {
     expect(cleanDescription("Ligne A\n\n\n\n   Ligne B   ")).toBe("Ligne A\n\nLigne B");
     expect(cleanDescription("Texte      espacé")).toBe("Texte espacé");

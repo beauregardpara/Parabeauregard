@@ -1,5 +1,5 @@
 export const BUSINESS = {
-  name: "Para BeauRegard",
+  name: "Para Beauregard",
   phoneDisplay: "06 63 48 82 87",
   phoneInternational: "+212663488287",
   email: "parabeauregard@gmail.com",

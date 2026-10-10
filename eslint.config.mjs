@@ -11,6 +11,7 @@ const config = [
     ignores: [
       "node_modules/**",
       ".next/**",
+      ".next-*/**",
       "out/**",
       "build/**",
       "test-results/**",

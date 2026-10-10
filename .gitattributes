@@ -1,0 +1,4 @@
+para-beauregard-desktop/publish-win7/ParaBeauregard.GestionVentes.Win7.exe filter=lfs diff=lfs merge=lfs -text
+para-beauregard-desktop/publish/ParaBeauregard.GestionVentes.exe filter=lfs diff=lfs merge=lfs -text
+para-beauregard-desktop/ParaBeauregard-GestionVentes-Windows7-x64.zip filter=lfs diff=lfs merge=lfs -text
+para-beauregard-desktop/ParaBeauregard-GestionVentes-Windows-x64.zip filter=lfs diff=lfs merge=lfs -text

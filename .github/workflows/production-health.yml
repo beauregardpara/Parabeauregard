@@ -20,7 +20,9 @@ jobs:
     timeout-minutes: 5
     env:
       # Valeurs publiques, surchargeables par des « variables » GitHub (pas de secret ici).
-      HEALTH_URL: ${{ vars.PRODUCTION_HEALTH_URL || 'https://para-beauregard.vercel.app/api/health' }}
+      # Railway héberge actuellement la production. Une variable GitHub
+      # PRODUCTION_HEALTH_URL peut toujours remplacer cette valeur par défaut.
+      HEALTH_URL: ${{ vars.PRODUCTION_HEALTH_URL || 'https://parabeauregard-production.up.railway.app/api/health' }}
       MIN_PRODUCTS: ${{ vars.PRODUCTION_MIN_PRODUCTS || '550' }}
       EXPECTED_VERSION: ${{ vars.PRODUCTION_EXPECTED_VERSION || '' }}
     steps:

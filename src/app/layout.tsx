@@ -16,7 +16,7 @@ import { syncCartForCustomer } from "@/lib/actions/cart";
 import { syncFavoriteForCustomer } from "@/lib/actions/favorites";
 import { headers } from "next/headers";
 import { BUSINESS } from "@/config/business";
-import { SITE_URL } from "@/config/site";
+import { absoluteUrl, SITE_URL } from "@/config/site";
 import { cachedCatalogue } from "@/lib/cache";
 
 export const metadata: Metadata = {
@@ -169,7 +169,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       availableLanguage: ["fr", "ar"],
     },
   };
+  const webSiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Para Beauregard",
+    url: siteUrl,
+    inLanguage: "fr-MA",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${absoluteUrl("/recherche")}?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
   const safeOrgJsonLd = JSON.stringify(orgJsonLd).replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
+  const safeWebSiteJsonLd = JSON.stringify(webSiteJsonLd).replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
 
   return (
     <html lang="fr">
@@ -182,6 +195,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="min-h-dvh">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeOrgJsonLd }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeWebSiteJsonLd }} />
         <CartProvider initialItems={cartItems} serverSync={syncCartForCustomer}>
           <CompareProvider>
             <FavoritesProvider initialFavorites={favorites} serverSync={syncFavoriteForCustomer}>

@@ -2,9 +2,27 @@ import { describe, it, expect } from "vitest";
 import { cleanDescription } from "../src/lib/product-description";
 
 describe("cleanDescription", () => {
+  it("retire le CSS brut même après une introduction", () => {
+    const css = '.elementor-12 .elementor-tab-title{border-width:0.5px;}@media(max-width:700px){.elementor-12{width:50%;}}';
+    expect(cleanDescription(`${css}Soin hydratant. Ajouter au Panier`)).toBe("Soin hydratant.");
+    expect(cleanDescription(`Crème douce.${css}Conseils : appliquer.`)).toBe("Crème douce.\n\nConseils : appliquer.");
+  });
+
+  it("ignore les entités numériques hors des limites Unicode", () => {
+    expect(cleanDescription("Soin &#99999999; doux")).toBe("Soin doux");
+  });
   it("retire les libellés d'interface des sites sources", () => {
     expect(cleanDescription("Soin hydratant. Lire la suiteShow less")).toBe("Soin hydratant.");
     expect(cleanDescription("Crème apaisante Ajouter au panier")).toBe("Crème apaisante");
+  });
+
+  it("retire le HTML et les classes techniques Elementor", () => {
+    const raw = '<div class="elementor-element e-con-inner"><p>Hydrate la peau.</p><span>Lire la suite</span></div>';
+    expect(cleanDescription(raw)).toBe("Hydrate la peau.");
+  });
+
+  it("décode les entités HTML simples", () => {
+    expect(cleanDescription("Soin &amp; confort&nbsp;quotidien")).toBe("Soin & confort quotidien");
   });
 
   it("normalise les espaces et les lignes vides", () => {

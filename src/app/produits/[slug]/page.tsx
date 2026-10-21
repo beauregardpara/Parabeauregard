@@ -30,11 +30,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // Never derive public metadata (title, description, OpenGraph) from a product
   // that is not published: the storefront must behave as if it does not exist.
   if (!p || p.status !== "PUBLISHED") notFound();
+  const label = p.brand && !p.name.toLocaleLowerCase().startsWith(p.brand.toLocaleLowerCase()) ? `${p.brand} ${p.name}` : p.name;
+  const titleBase = `${label.slice(0, 30).trim()} Prix Maroc`;
+  const descriptionSource = p.shortDescription ?? p.description ?? "Découvrez ce produit de parapharmacie.";
+  const description = `Achetez ${label} au Maroc. ${descriptionSource} Livraison partout au Maroc chez Para Beauregard.`.slice(0, 158);
   return {
-    title: p.name,
-    description: p.shortDescription ?? p.description?.slice(0, 160) ?? `Achetez ${p.name} au meilleur prix au Maroc.`,
+    title: titleBase,
+    description,
     alternates: { canonical: `/produits/${slug}` },
-    openGraph: { images: p.images[0]?.url ? [p.images[0].url] : [] },
+    openGraph: { type: "website", title: titleBase, description, url: absoluteUrl(`/produits/${slug}`), images: p.images[0]?.url ? [{ url: p.images[0].url, alt: label }] : [] },
+    twitter: { card: "summary_large_image", title: titleBase, description, images: p.images[0]?.url ? [p.images[0].url] : undefined },
   };
 }
 
@@ -52,6 +57,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const lowStock = !p.unlimitedStock && p.stock > 0 && p.stock <= p.lowStockThreshold;
   const isNew = Boolean(p.isNew);
   const shortDescription = cleanDescription(p.shortDescription);
+  const fullDescription = cleanDescription(p.description);
   const avgRating =
     p.reviews.length > 0 ? p.reviews.reduce((s, r) => s + r.rating, 0) / p.reviews.length : null;
 
@@ -73,14 +79,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     "@context": "https://schema.org",
     "@type": "Product",
     name: p.name,
-    description: p.shortDescription ?? p.description ?? "",
+    url: absoluteUrl(`/produits/${p.slug}`),
+    description: shortDescription ?? fullDescription ?? "",
     image: p.images.map((i) => i.url),
     sku: p.sku ?? String(p.id),
     brand: p.brand ? { "@type": "Brand", name: p.brand } : undefined,
     offers: {
       "@type": "Offer",
+      url: absoluteUrl(`/produits/${p.slug}`),
       priceCurrency: "MAD",
       price,
+      seller: { "@type": "Organization", name: "Para Beauregard", url: absoluteUrl() },
       availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
     },
     ...(avgRating
@@ -239,7 +248,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <h2 className="font-display text-xl font-bold text-para-900">Description</h2>
           <hr className="hr-gradient my-4 w-24" />
           <div className="prose-sm whitespace-pre-wrap leading-relaxed text-slate-600">
-            {cleanDescription(p.description) ?? "Description en cours de rédaction."}
+            {fullDescription ?? "Description en cours de rédaction."}
           </div>
         </div>
 

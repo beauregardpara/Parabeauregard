@@ -58,7 +58,7 @@ export async function loginCustomer(formData: FormData): Promise<AuthResult> {
   const { email, password } = parsed.data;
 
   const customer = await db.customer.findUnique({ where: { email } });
-  if (!customer || !verifyPassword(password, customer.passwordHash)) {
+  if (!customer || !customer.passwordHash || !verifyPassword(password, customer.passwordHash)) {
     return { ok: false, error: "Email ou mot de passe incorrect." };
   }
 
@@ -85,7 +85,7 @@ export async function requestPasswordReset(formData: FormData): Promise<Password
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Adresse email invalide." };
 
   const customer = await db.customer.findUnique({ where: { email: parsed.data } });
-  if (customer) {
+  if (customer?.passwordHash) {
     await sendTransactionalEmail({
       to: customer.email,
       template: "password-reset",
@@ -112,7 +112,7 @@ export async function resetPassword(formData: FormData): Promise<AuthResult> {
   if (password !== confirm) return { ok: false, error: "Les deux mots de passe ne correspondent pas." };
 
   const customer = await db.customer.findUnique({ where: { id: token.sub } });
-  if (!customer || !passwordResetMatches(token.fp, customer.passwordHash)) return invalid;
+  if (!customer || !customer.passwordHash || !passwordResetMatches(token.fp, customer.passwordHash)) return invalid;
 
   await db.customer.update({ where: { id: customer.id }, data: { passwordHash: hashPassword(parsed.data) } });
   await clearCustomerSession();

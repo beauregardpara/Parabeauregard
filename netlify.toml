@@ -5,6 +5,8 @@
 [build.environment]
   NODE_VERSION = "22"
   NEXT_TELEMETRY_DISABLED = "1"
+  # Public image bucket name appears in image URLs; it is not a credential.
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_PRODUCT_IMAGES_BUCKET"
 
 [context.production.environment]
   NEXT_PUBLIC_SITE_URL = "https://parabeauregard.com"
